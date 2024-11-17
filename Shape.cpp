@@ -2,8 +2,10 @@
 
 #include <iostream>
 
+/* Shape class */
+Material Shape::getMaterial() const { return material; }
 
-// Sphere class
+/* Sphere class */
 
 Sphere::Sphere(Vector3 center, float radius, Material material) : center(center), radius(radius) {
 	this->material = material;
@@ -115,7 +117,7 @@ Triangle::Triangle(Vector3 v0, Vector3 v1, Vector3 v2, Material material) : v0(v
 
 Triangle::~Triangle() {}
 
-Vector3 Triangle::getNormal() {
+Vector3 Triangle::getNormal(const Vector3& point) {
 	Vector3 E1 = v1 - v0;  // Edge 1: from v0 to v1
 	Vector3 E2 = v2 - v0;  // Edge 2: from v0 to v2
 	return crossProduct(E1, E2).normalize();

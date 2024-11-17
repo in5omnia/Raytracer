@@ -15,10 +15,12 @@ class Color {
 		/*Color(uint8_t r, uint8_t g, uint8_t b);*/
 		Color(float r, float g, float b);
 		~Color();
+
 		//getters
 		uint8_t getR() const;
 		uint8_t getG() const;
 		uint8_t getB() const;
+
 		//setters
 		void setR(unsigned int r);
 		void setG(unsigned int g);
@@ -26,33 +28,44 @@ class Color {
 		void setRGB(unsigned int r, unsigned int g, unsigned int b);
 		void setRGBFloat(float r, float g, float b);
 
-		/*void scaleRGB(float factor);
-		void addRGB(const Color& color);
-		void addRGBFloat(float r, float g, float b);
-		void subtractRGB(const Color& color);
-		void subtractRGBFloat(float r, float g, float b);
-		void multiplyRGB(const Color& color);
-		void multiplyRGBFloat(float r, float g, float b);
-		void divideRGB(const Color& color);
-		void divideRGBFloat(float r, float g, float b);
-		void clampRGB();
-		void gammaCorrect(float gamma);
-		void gammaCorrectRGB(float gamma);
-		void gammaCorrectRGBFloat(float gamma);
-		void toFloat(float* r, float* g, float* b);
-		void toFloat(float* rgb);
-		void toInt(unsigned int* r, unsigned int* g, unsigned int* b);
-		void toInt(unsigned int* rgb);
-		void toPPM(std::ostream& out);
-		void toPPM(std::ostream& out, int max);
-		void toPPM(std::ostream& out, int max, int indent);
-		void toPPM(std::ostream& out, int max, int indent, int width);
-		void toPPM(std::ostream& out, int max, int indent, int width, int precision);
-		void toPPM(std::ostream& out, int max, int indent, int width, int precision, bool newline);
-		void toPPM(std::ostream& out, int max, int indent, int width, int precision, bool newline, bool flush);
-		void toPPM(std::ostream& out, int max, int indent, int width, int precision, bool newline, bool flush, bool hex);
-		void toPPM(std::ostream& out, int max, int indent, int width, int precision, bool newline, bool flush, bool hex, bool upper);
-		void toPPM(std::ostream& out, int max, int indent, int width,*/
+		//operators
+		Color operator*(float s) const;
+		Color operator+(const Color& color) const;
+		Color operator-(const Color& color) const;
+		Color operator+=(const Color& color);
+		Color operator*(const Color& color) const;	//element-wise multiplication
+
+		Color clamp(float min, float max) const ;
+
+
+
+	/*void scaleRGB(float factor);
+	void addRGB(const Color& color);
+	void addRGBFloat(float r, float g, float b);
+	void subtractRGB(const Color& color);
+	void subtractRGBFloat(float r, float g, float b);
+	void multiplyRGB(const Color& color);
+	void multiplyRGBFloat(float r, float g, float b);
+	void divideRGB(const Color& color);
+	void divideRGBFloat(float r, float g, float b);
+	void clampRGB();
+	void gammaCorrect(float gamma);
+	void gammaCorrectRGB(float gamma);
+	void gammaCorrectRGBFloat(float gamma);
+	void toFloat(float* r, float* g, float* b);
+	void toFloat(float* rgb);
+	void toInt(unsigned int* r, unsigned int* g, unsigned int* b);
+	void toInt(unsigned int* rgb);
+	void toPPM(std::ostream& out);
+	void toPPM(std::ostream& out, int max);
+	void toPPM(std::ostream& out, int max, int indent);
+	void toPPM(std::ostream& out, int max, int indent, int width);
+	void toPPM(std::ostream& out, int max, int indent, int width, int precision);
+	void toPPM(std::ostream& out, int max, int indent, int width, int precision, bool newline);
+	void toPPM(std::ostream& out, int max, int indent, int width, int precision, bool newline, bool flush);
+	void toPPM(std::ostream& out, int max, int indent, int width, int precision, bool newline, bool flush, bool hex);
+	void toPPM(std::ostream& out, int max, int indent, int width, int precision, bool newline, bool flush, bool hex, bool upper);
+	void toPPM(std::ostream& out, int max, int indent, int width,*/
 };
 
 

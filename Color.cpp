@@ -24,3 +24,43 @@ void Color::setRGBFloat(float r, float g, float b) {
 	this->b = static_cast<unsigned int>(b * 255.0f);
 }
 
+Color Color::operator*(float s) const{
+	return Color(r * s, g * s, b * s);
+}
+
+Color Color::operator+(const Color& color) const{
+	return Color(r + color.r, g + color.g, b + color.b);
+}
+
+Color Color::operator-(const Color& color) const {
+	return Color(r - color.r, g - color.g, b - color.b);
+}
+
+Color Color::operator+=(const Color& color) {
+	r += color.r;
+	g += color.g;
+	b += color.b;
+	return *this;
+}
+
+Color Color::operator*(const Color& color) const {
+	return Color(r * color.r, g * color.g, b * color.b);
+}
+
+/* auxiliary function for Color::clamp */
+float clampFloat(float value, float min, float max) {
+	if (value < min) return min;
+	if (value > max) return max;
+	return value;
+}
+
+Color Color::clamp(float min, float max) const {
+	return Color(
+			clampFloat(r, min, max),  // Clamp red
+			clampFloat(g, min, max),  // Clamp green
+			clampFloat(b, min, max)   // Clamp blue
+	);
+}
+
+
+

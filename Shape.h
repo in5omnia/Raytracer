@@ -11,8 +11,9 @@ class Shape {
 	public:
 		virtual ~Shape() = default;
 		virtual bool intersect(const Ray& ray, float& t) = 0;
+		Material getMaterial() const;
 		//Pure virtual function for intersection test.
-		/*virtual Vector3 getNormal(const Vector3& point) = 0;*/ //removing because triangle doesnt use point
+		virtual Vector3 getNormal(const Vector3& point) = 0; //note: triangle doesnt use point
 		//Returns the surface normal at a point.
 };
 
@@ -27,7 +28,7 @@ class Sphere : public Shape {
 
 		//methods
 		bool intersect(const Ray& ray, float& t) override;
-		Vector3 getNormal(const Vector3& point);
+		Vector3 getNormal(const Vector3& point) override;
 };
 
 
@@ -44,7 +45,7 @@ class Cylinder : public Shape {
 		//methods
 		bool intersect(const Ray& ray, float& t) override;
 		bool isWithinHeight(const Vector3& point) const;
-		Vector3 getNormal(const Vector3& point);
+		Vector3 getNormal(const Vector3& point) override;
 };
 
 
@@ -59,7 +60,7 @@ class Triangle : public Shape {
 
 		//methods
 		bool intersect(const Ray& ray, float& t) override;
-		Vector3 getNormal();
+		Vector3 getNormal(const Vector3& point) override;
 };
 
 

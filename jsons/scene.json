@@ -31,19 +31,19 @@
                 { 
                     "type":"sphere", 
                     "center": [0, -25.0, 0], 
-                    "radius":25.1, 
+                    "radius":25.1,
                     "material":
-                        { 
-                            "ks":0.1, 
-                            "kd":0.9, 
-                            "specularexponent":10, 
+                        {
+                            "ks":0.1,
+                            "kd":0.9,
+                            "specularexponent":10,
                             "diffusecolor":[0.5, 1, 0.5],
                             "specularcolor":[1.0,1.0,1.0],
                             "isreflective":false,
                             "reflectivity":1.0,
                             "isrefractive":false,
-                            "refractiveindex":1.0 
-                        } 
+                            "refractiveindex":1.0
+                        }
                 },
                 {
                     "type": "cylinder",

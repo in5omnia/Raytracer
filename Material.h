@@ -1,22 +1,39 @@
 #ifndef RAYTRACER_MATERIAL_H
 #define RAYTRACER_MATERIAL_H
-
+#include "Vector3.h"
+#include "Color.h"
 
 class Material {
-/*
-Attributes:
-Diffuse color (Vector3 diffuseColor;)
-Specular color (Vector3 specularColor;)
-Ambient color (optional)
-Specular exponent (float specularExponent;)
-Reflectivity (float reflectivity;)
-Refractive index (float refractiveIndex;)
-Flags for reflective and refractive properties.
+	private:
+		float ks;                   // Specular coefficient
+		float kd;                   // Diffuse coefficient
+		int specularExponent;       // Specular exponent
+		Color diffuseColor;       // Diffuse color (RGB)
+		Color specularColor;      // Specular color (RGB)
+		bool isReflective;          // Reflective property
+		float reflectivity;         // Reflectivity coefficient
+		bool isRefractive;          // Refractive property
+		float refractiveIndex;      // Refractive index
 
-Methods:
-bool isReflective() const;
-bool isRefractive() const;
- */
+	public:
+		// Constructor
+		Material(float ks, float kd, int specularExponent,
+				 const Color& diffuseColor, const Color& specularColor,
+				 bool isReflective, float reflectivity,
+				 bool isRefractive, float refractiveIndex);
+
+		// Default Constructor
+		Material();
+		~Material() = default;
+		bool getIsReflective() const;
+		bool getIsRefractive() const;
+		float getKs() const;
+		float getKd() const;
+		int getSpecularExponent() const;
+		Color getDiffuseColor() const;
+		Color getSpecularColor() const;
+		float getReflectivity() const;
+		float getRefractiveIndex() const;
 };
 
 
