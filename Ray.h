@@ -10,7 +10,7 @@ class Ray {
 		Ray(Vector3 origin, Vector3 direction);
 		~Ray(); // destructor
 
-		Vector3 pointAtParameter(float t); // Returns a point along the ray.
+		Vector3 pointAtParameter(float t) const; // Returns a point along the ray.
 
 		//getters
 		Vector3 getOrigin() const;

@@ -6,7 +6,7 @@ Ray::Ray(Vector3 origin, Vector3 direction) : origin(origin), direction(directio
 // destructor
 Ray::~Ray(){}
 
-Vector3 Ray::pointAtParameter(float t) {
+Vector3 Ray::pointAtParameter(float t) const {
 	return origin + direction * t;
 }
 
