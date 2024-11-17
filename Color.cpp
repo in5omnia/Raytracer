@@ -2,7 +2,7 @@
 
 // Default constructor
 Color::Color() : r(0.0f), g(0.0f), b(0.0f) {}
-Color::Color(uint8_t r, uint8_t g, uint8_t b) : r(r), g(g), b(b) {}
+/*Color::Color(uint8_t r, uint8_t g, uint8_t b) : r(r), g(g), b(b) {}*/
 Color::Color(float r, float g, float b) : r(static_cast<uint8_t>(r * 255.0f)), g(static_cast<uint8_t>(g * 255.0f)), b(static_cast<uint8_t>(b * 255.0f)) {}
 Color::~Color() {}
 

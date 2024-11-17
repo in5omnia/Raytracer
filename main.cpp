@@ -2,7 +2,6 @@
 #include "Image.h"
 #include "Scene.h"
 #include "Shape.h"
-#include "Sphere.h"
 #include "Color.h"
 #include "Material.h"
 #include "Vector3.h"
@@ -20,7 +19,7 @@ int main() {
 		//sphere test
 		Scene scene(Color(0.0f, 0.0f, 0.0f));	//black background
 		Vector3 center(-0.3, 0.19, 1);
-		scene.addShape(std::make_unique<Sphere>(center, 0.2f, Material()));
+		scene.addShape(std::make_shared<Sphere>(center, 0.2f, Material()));
 
 		Raytracer raytracer(1, "binary", camera, scene);
 		Image image = Image(1200, 800);

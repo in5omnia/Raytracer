@@ -9,16 +9,16 @@
 
 class Scene {
 	private:
-		std::vector<std::unique_ptr<Shape>> shapes;
-		std::vector<std::unique_ptr<Light>> lights;
 		Color backgroundColor;
+		std::vector<std::shared_ptr<Shape>> shapes;
+		std::vector<std::shared_ptr<Light>> lights;
 
 	public:
 		Scene(Color backgroundColor);
-		Scene(Color backgroundColor, std::vector<std::unique_ptr<Shape>> shapes, std::vector<std::unique_ptr<Light>> lights);
+		Scene(Color backgroundColor, std::vector<std::shared_ptr<Shape>> shapes, std::vector<std::shared_ptr<Light>> lights);
 		~Scene();
-		void addShape(std::unique_ptr<Shape> shape);
-		void addLight(std::unique_ptr<Light> light);
+		void addShape(std::shared_ptr<Shape> shape);
+		void addLight(std::shared_ptr<Light> light);
 		bool intersect(const Ray& ray, float& t);
 		//Iterates over all shapes to find the closest intersection.
 };

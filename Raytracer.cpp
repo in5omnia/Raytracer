@@ -14,7 +14,7 @@ void Raytracer::render(Image& image) {
 	for (int y = 0; y < height; ++y) {		//bottom to top
 		for (int x = 0; x < width; ++x) {	//left to right
 			//Normalized pixel coordinates
-			float u = (static_cast<float>(x) + 0.5f) / static_cast<float>(width);
+			float u = 1.0f - (static_cast<float>(x) + 0.5f) / static_cast<float>(width);	//(subtracting from 1 because before it was flipped)
 			float v = (static_cast<float>(y) + 0.5f) / static_cast<float>(height);
 			v = 1.0f - v; // Flip v if necessary
 
@@ -34,6 +34,7 @@ Color Raytracer::traceRay(const Ray& ray) {
 		float t;  // Distance to the closest intersection
 		if (scene.intersect(ray, t)) {
 			// If an intersection occurs, return red for the object
+			std::cout << "Raytracer: Intersection detected" << std::endl;
 			return Color(1.0f, 0.0f, 0.0f);  // Red color
 		}
 

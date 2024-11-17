@@ -1,5 +1,6 @@
 #include "Shape.h"
 
+#include <iostream>
 
 
 // Sphere class
@@ -21,6 +22,7 @@ bool Sphere::intersect(const Ray& ray, float& t) {
 
 	// No intersection
 	if (discriminant < 0) {
+		//std::cout << "No Intersection :(" << std::endl;
 		return false;
 	}
 
@@ -37,7 +39,7 @@ bool Sphere::intersect(const Ray& ray, float& t) {
 	} else {
 		return false;  // Both intersections are behind the ray origin
 	}
-
+	std::cout << "Intersection detected in sphere!!" << std::endl;
 	return true;
 }
 

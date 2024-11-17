@@ -7,18 +7,18 @@ Image::Image(int w, int h) : width(w), height(h) {
 	pixels.resize(width * height);
 }
 
-void Image::setPixelColor(int x, int y, uint8_t r, uint8_t g, uint8_t b) {
+/*void Image::setPixelColor(int x, int y, uint8_t r, uint8_t g, uint8_t b) {
 	if (x < 0 || x >= width || y < 0 || y >= height) {
 		throw std::out_of_range("Pixel coordinates out of bounds");
 	}
 
-	/*int index = (y * width + x) * 3;
-	pixels[index] = r;
-	pixels[index + 1] = g;
-	pixels[index + 2] = b;*/
+	//int index = (y * width + x) * 3;
+	//pixels[index] = r;
+	//pixels[index + 1] = g;
+	//pixels[index + 2] = b;
 	int index = (y * width + x);
 	pixels[index] = Color(r, g, b);
-}
+}*/
 
 void Image::setPixelColor(int x, int y, Color color) {
 	if (x < 0 || x >= width || y < 0 || y >= height) {
@@ -46,7 +46,13 @@ bool Image::writePPM(const std::string& filename) const {
 	file << width << " " << height << "\n";
 	file << "255\n";
 
-	file.write(reinterpret_cast<const char*>(pixels.data()), pixels.size());
+	// Write pixel data
+	for (const Color& color : pixels) {
+		file.put(static_cast<char>(color.getR()));  // Red channel
+		file.put(static_cast<char>(color.getG()));  // Green channel
+		file.put(static_cast<char>(color.getB()));  // Blue channel
+	}
+	//file.write(reinterpret_cast<const char*>(pixels.data()), pixels.size());
 
 	return file.good();
 }
