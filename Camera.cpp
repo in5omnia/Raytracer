@@ -1,5 +1,6 @@
 #include "Camera.h"
 
+
 /* PinholeCamera */
 
 PinholeCamera::PinholeCamera(int width, int height,

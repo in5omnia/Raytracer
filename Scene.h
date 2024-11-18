@@ -15,6 +15,7 @@ class Scene {
 		std::shared_ptr<Shape> lastHitObject = nullptr;
 
 	public:
+		Scene() = default;
 		Scene(Color backgroundColor);
 		Scene(Color backgroundColor, std::vector<std::shared_ptr<Shape>> shapes, std::vector<std::shared_ptr<Light>> lights);
 		~Scene();

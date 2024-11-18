@@ -23,6 +23,7 @@ class Camera {
 		void calculateRightVector();
 
 	public:
+		Camera() = default;
 		//methods
 		virtual Ray generateRay(float x, float y) const  = 0;
 
@@ -53,6 +54,8 @@ class PinholeCamera: public Camera {
 		float fov;
 
 	public:
+		//constructor
+		PinholeCamera()= default;
 		PinholeCamera(int width, int height,
 			   Vector3 position,
 			   Vector3 lookAt,

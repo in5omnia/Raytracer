@@ -3,15 +3,14 @@
 #include <iostream>
 
 /* Shape class */
+Shape::Shape(const Material& material): material(material) {}
+
 Material Shape::getMaterial() const { return material; }
 
 /* Sphere class */
 
-Sphere::Sphere(Vector3 center, float radius, Material material) : center(center), radius(radius) {
-	this->material = material;
-}
+Sphere::Sphere(Vector3 center, float radius, const Material& material) : Shape(material), center(center), radius(radius) {}
 
-Sphere::~Sphere() {}
 
 bool Sphere::intersect(const Ray& ray, float& t) {
 
@@ -51,12 +50,9 @@ Vector3 Sphere::getNormal(const Vector3& point) {
 
 /* Cylinder class */
 
-Cylinder::Cylinder(Vector3 center, Vector3 axis, float radius, float height, Material material) :
-				center(center), axis(axis), radius(radius), height(height*2.0) {	//multiply height to match cw image
-	this->material = material;
-}
+Cylinder::Cylinder(Vector3 center, Vector3 axis, float radius, float height, const Material& material) :
+				Shape(material), center(center), axis(axis), radius(radius), height(height*2.0) {}	//multiply height to match cw image
 
-Cylinder::~Cylinder() {}
 
 bool Cylinder::intersect(const Ray& ray, float& t){
 	Vector3 V = ray.getOrigin() - center;  // "center" is middle of the cylinder
@@ -111,11 +107,9 @@ Vector3 Cylinder::getNormal(const Vector3& point){
 
 /* Triangle */
 
-Triangle::Triangle(Vector3 v0, Vector3 v1, Vector3 v2, Material material) : v0(v0), v1(v1), v2(v2) {
-	this->material = material;
-}
+Triangle::Triangle(Vector3 v0, Vector3 v1, Vector3 v2, const Material& material) :
+										Shape(material), v0(v0), v1(v1), v2(v2) {}
 
-Triangle::~Triangle() {}
 
 Vector3 Triangle::getNormal(const Vector3& point) {
 	Vector3 E1 = v1 - v0;  // Edge 1: from v0 to v1

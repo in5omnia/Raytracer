@@ -9,6 +9,7 @@ class Shape {
 	protected:
 		Material material;
 	public:
+		Shape(const Material& material);
 		virtual ~Shape() = default;
 		virtual bool intersect(const Ray& ray, float& t) = 0;
 		Material getMaterial() const;
@@ -23,8 +24,7 @@ class Sphere : public Shape {
 		Vector3 center;
 		float radius;
 	public:
-		Sphere(Vector3 center, float radius, Material material);
-		~Sphere(); // destructor
+		Sphere(Vector3 center, float radius, const Material& material);
 
 		//methods
 		bool intersect(const Ray& ray, float& t) override;
@@ -39,8 +39,7 @@ class Cylinder : public Shape {
 		float radius;
 		float height;
 	public:
-		Cylinder(Vector3 center, Vector3 axis, float radius, float height, Material material);
-		~Cylinder(); // destructor
+		Cylinder(Vector3 center, Vector3 axis, float radius, float height, const Material& material);
 
 		//methods
 		bool intersect(const Ray& ray, float& t) override;
@@ -55,8 +54,7 @@ class Triangle : public Shape {
 		Vector3 v1;
 		Vector3 v2;
 	public:
-		Triangle(Vector3 v0, Vector3 v1, Vector3 v2, Material material);
-		~Triangle(); // destructor
+		Triangle(Vector3 v0, Vector3 v1, Vector3 v2, const Material& material);
 
 		//methods
 		bool intersect(const Ray& ray, float& t) override;

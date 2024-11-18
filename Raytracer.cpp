@@ -1,5 +1,8 @@
 #include "Raytracer.h"
 
+Raytracer::Raytracer(){}
+
+
 Raytracer::Raytracer(int nbounces,
 		  std::string rendermode,
 		  PinholeCamera& camera,
@@ -101,13 +104,13 @@ Color Raytracer::shadeBlinnPhong(const Ray& ray, float& t) {
 }
 
 
-void Raytracer::readJSON(const std::string& filename) {
+Image Raytracer::readJSON(const std::string& filename) {
 	std::ifstream file(filename);
 	if (!file) {
 		throw std::runtime_error("Could not open JSON file: " + filename);
 	}
 
-	nlohmann::json j = nlohmann::json::parse(false, file);
+	nlohmann::json j = nlohmann::json::parse(file);
 
 	// Load raytracer settings
 	nbounces = j["nbounces"];
@@ -115,23 +118,27 @@ void Raytracer::readJSON(const std::string& filename) {
 
 	// Load camera
 	auto camData = j["camera"];
-	camera = PinholeCamera(
-			camData["width"],
-			camData["height"],
-			Vector3(camData["position"][0], camData["position"][1], camData["position"][2]),
-			Vector3(camData["lookAt"][0], camData["lookAt"][1], camData["lookAt"][2]),
-			Vector3(camData["upVector"][0], camData["upVector"][1], camData["upVector"][2]),
-			camData["fov"],
-			camData["exposure"]
-	);
+	if (camData["type"] == "pinhole") {
+		camera = PinholeCamera(
+				camData["width"],
+				camData["height"],
+				Vector3(camData["position"][0], camData["position"][1], camData["position"][2]),
+				Vector3(camData["lookAt"][0], camData["lookAt"][1], camData["lookAt"][2]),
+				Vector3(camData["upVector"][0], camData["upVector"][1], camData["upVector"][2]),
+				camData["fov"],
+				camData["exposure"]
+		);
+	} // if other types of cameras are added, add them here
+
 
 	// Load scene
 	auto sceneData = j["scene"];
-	scene.setBackgroundColor(Color(
+	Color backgroundColor(
 			sceneData["backgroundcolor"][0],
 			sceneData["backgroundcolor"][1],
 			sceneData["backgroundcolor"][2]
-	));
+	);
+	scene = Scene(backgroundColor);
 
 	// Load lights
 	for (const auto& lightData : sceneData["lightsources"]) {
@@ -181,5 +188,6 @@ void Raytracer::readJSON(const std::string& filename) {
 			));
 		}
 	}
+	return Image(camera.getWidth(), camera.getHeight());
 }
 

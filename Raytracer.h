@@ -22,6 +22,7 @@ class Raytracer {
 		Scene scene;
 
 	public:
+		Raytracer();
 		Raytracer(int nbounces,
 				  std::string rendermode,
 				  PinholeCamera& camera,
@@ -32,7 +33,7 @@ class Raytracer {
 		Color shadeBlinnPhong(const Ray& ray, float& t);
 
 		//read json method
-		void readJSON(const std::string& filename);
+		Image readJSON(const std::string& filename);
 
 };
 
