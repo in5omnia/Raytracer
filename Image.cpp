@@ -48,9 +48,9 @@ bool Image::writePPM(const std::string& filename) const {
 
 	// Write pixel data
 	for (const Color& color : pixels) {
-		file.put(static_cast<char>(color.getR()));  // Red channel
-		file.put(static_cast<char>(color.getG()));  // Green channel
-		file.put(static_cast<char>(color.getB()));  // Blue channel
+		file.put(static_cast<char>(color.getR()*255));  // Red channel
+		file.put(static_cast<char>(color.getG()*255));  // Green channel
+		file.put(static_cast<char>(color.getB()*255));  // Blue channel
 	}
 	//file.write(reinterpret_cast<const char*>(pixels.data()), pixels.size());
 

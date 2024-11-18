@@ -40,7 +40,6 @@ Color Raytracer::traceRay(const Ray& ray) {
 			std::cout << "Raytracer: Intersection detected" << std::endl;
 			return Color(1.0f, 0.0f, 0.0f);  // Red color
 		}
-
 		// No intersection: return black for background
 		return Color(0.0f, 0.0f, 0.0f);  // Black color
 	}
@@ -113,7 +112,11 @@ Image Raytracer::readJSON(const std::string& filename) {
 	nlohmann::json j = nlohmann::json::parse(file);
 
 	// Load raytracer settings
-	nbounces = j["nbounces"];
+	if (j.contains("nbounces")) {
+		nbounces = j["nbounces"];
+	} else {
+		nbounces = 1;
+	}
 	rendermode = j["rendermode"];
 
 	// Load camera
@@ -130,7 +133,7 @@ Image Raytracer::readJSON(const std::string& filename) {
 		);
 	} // if other types of cameras are added, add them here
 
-
+	std::cout << "Camera loaded" << std::endl;
 	// Load scene
 	auto sceneData = j["scene"];
 	Color backgroundColor(
@@ -139,31 +142,37 @@ Image Raytracer::readJSON(const std::string& filename) {
 			sceneData["backgroundcolor"][2]
 	);
 	scene = Scene(backgroundColor);
-
-	// Load lights
-	for (const auto& lightData : sceneData["lightsources"]) {
-		if (lightData["type"] == "pointlight") {
-			scene.addLight(std::make_shared<PointLight>(
-					Vector3(lightData["position"][0], lightData["position"][1], lightData["position"][2]),
-					Color(lightData["intensity"][0], lightData["intensity"][1], lightData["intensity"][2])
-			));
+	if (sceneData.contains("lightsources")) {
+		// Load lights
+		for (const auto& lightData : sceneData["lightsources"]) {
+			if (lightData["type"] == "pointlight") {
+				scene.addLight(std::make_shared<PointLight>(
+						Vector3(lightData["position"][0], lightData["position"][1], lightData["position"][2]),
+						Color(lightData["intensity"][0], lightData["intensity"][1], lightData["intensity"][2])
+				));
+			}
 		}
 	}
-
+	std::cout << "Lights loaded" << std::endl;
 	// Load shapes
 	for (const auto& shapeData : sceneData["shapes"]) {
-		auto materialData = shapeData["material"];
-		Material material(
-				materialData["ks"],
-				materialData["kd"],
-				materialData["specularexponent"],
-				Color(materialData["diffusecolor"][0], materialData["diffusecolor"][1], materialData["diffusecolor"][2]),
-				Color(materialData["specularcolor"][0], materialData["specularcolor"][1], materialData["specularcolor"][2]),
-				materialData["isreflective"],
-				materialData["reflectivity"],
-				materialData["isrefractive"],
-				materialData["refractiveindex"]
-		);
+		Material material;
+		if (shapeData.contains("material")) {
+			auto materialData = shapeData["material"];
+			material = Material(
+					materialData["ks"],
+					materialData["kd"],
+					materialData["specularexponent"],
+					Color(materialData["diffusecolor"][0], materialData["diffusecolor"][1], materialData["diffusecolor"][2]),
+					Color(materialData["specularcolor"][0], materialData["specularcolor"][1], materialData["specularcolor"][2]),
+					materialData["isreflective"],
+					materialData["reflectivity"],
+					materialData["isrefractive"],
+					materialData["refractiveindex"]
+			);
+		} else {
+			material = Material(0.5f, 0.5f, 32, Color(1, 1, 1), Color(1, 1, 1), false, 0.0f, false, 1.0f);
+		}
 
 		if (shapeData["type"] == "sphere") {
 			scene.addShape(std::make_shared<Sphere>(
