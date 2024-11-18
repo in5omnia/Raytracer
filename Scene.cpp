@@ -22,7 +22,7 @@ bool Scene::intersect(const Ray& ray, float& t){
 		float tShape;	//distance t where the ray intersects the shape
 		//if the ray intersects the shape and the intersection is closer than the previous one
 		if (shape->intersect(ray, tShape) && tShape < tmin){
-			std::cout << "Intersection detected" << std::endl;
+			//std::cout << "Intersection detected" << std::endl;
 			tmin = tShape;
 			lastHitObject = shape;
 		}
@@ -38,5 +38,9 @@ Color Scene::getBackgroundColor() const{
 std::shared_ptr<Shape> Scene::getLastHitObject() const { return lastHitObject; }
 
 std::vector<std::shared_ptr<Light> > Scene::getLights() const { return lights; }
+
+void Scene::setBackgroundColor(Color color){
+	backgroundColor = color;
+}
 
 

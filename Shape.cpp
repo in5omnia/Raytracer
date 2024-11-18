@@ -40,7 +40,7 @@ bool Sphere::intersect(const Ray& ray, float& t) {
 	} else {
 		return false;  // Both intersections are behind the ray origin
 	}
-	std::cout << "Intersection detected in sphere!!" << std::endl;
+	//std::cout << "Intersection detected in sphere!!" << std::endl;
 	return true;
 }
 

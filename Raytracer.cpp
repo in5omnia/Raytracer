@@ -1,13 +1,6 @@
 #include "Raytracer.h"
 
-Raytracer::Raytracer(){}
-
-
-Raytracer::Raytracer(int nbounces,
-		  std::string rendermode,
-		  PinholeCamera& camera,
-		  Scene& scene
-) :  nbounces(nbounces), rendermode(rendermode), camera(camera), scene(scene) {}
+Raytracer::Raytracer() {}
 
 
 void Raytracer::render(Image& image) {
@@ -21,7 +14,7 @@ void Raytracer::render(Image& image) {
 			float v = (static_cast<float>(y) + 0.5f) / static_cast<float>(height);
 			v = 1.0f - v; // Flip v if necessary
 
-			Ray ray = camera.generateRay(u, v);
+			Ray ray = camera->generateRay(u, v);
 			Color color = traceRay(ray);
 
 			image.setPixelColor(x, y, color);
@@ -37,7 +30,7 @@ Color Raytracer::traceRay(const Ray& ray) {
 		float t;  // Distance to the closest intersection
 		if (scene.intersect(ray, t)) {
 			// If an intersection occurs, return red for the object
-			std::cout << "Raytracer: Intersection detected" << std::endl;
+			//std::cout << "Raytracer: Intersection detected" << std::endl;
 			return Color(1.0f, 0.0f, 0.0f);  // Red color
 		}
 		// No intersection: return black for background
@@ -49,6 +42,7 @@ Color Raytracer::traceRay(const Ray& ray) {
 			return shadeBlinnPhong(ray, t);  // Blinn-Phong color
 		}
 		// No intersection
+		//std::cout << "background" << "[" << scene.getBackgroundColor().getR() << scene.getBackgroundColor().getG() << scene.getBackgroundColor().getB() << "]" << std::endl;
 		return scene.getBackgroundColor();
 	}
 
@@ -65,6 +59,7 @@ Color Raytracer::traceRay(const Ray& ray) {
 
 
 Color Raytracer::shadeBlinnPhong(const Ray& ray, float& t) {
+	//std::cout << "Blinn Phong" << std::endl;
 	std::shared_ptr<Shape> hitObject = scene.getLastHitObject();  // Get the intersected object
 	Material material = hitObject->getMaterial();
 
@@ -122,7 +117,7 @@ Image Raytracer::readJSON(const std::string& filename) {
 	// Load camera
 	auto camData = j["camera"];
 	if (camData["type"] == "pinhole") {
-		camera = PinholeCamera(
+		camera = std::make_shared<PinholeCamera>(
 				camData["width"],
 				camData["height"],
 				Vector3(camData["position"][0], camData["position"][1], camData["position"][2]),
@@ -133,7 +128,7 @@ Image Raytracer::readJSON(const std::string& filename) {
 		);
 	} // if other types of cameras are added, add them here
 
-	std::cout << "Camera loaded" << std::endl;
+	std::cout << "Camera loaded" << "width" << camera->getWidth() << std::endl;
 	// Load scene
 	auto sceneData = j["scene"];
 	Color backgroundColor(
@@ -141,7 +136,10 @@ Image Raytracer::readJSON(const std::string& filename) {
 			sceneData["backgroundcolor"][1],
 			sceneData["backgroundcolor"][2]
 	);
-	scene = Scene(backgroundColor);
+	std::cout << "background" << "[" << backgroundColor.getR() << backgroundColor.getG() << backgroundColor.getB() << "]" << std::endl;
+	scene.setBackgroundColor(backgroundColor);
+	std::cout << "background" << "[" << scene.getBackgroundColor().getR() << scene.getBackgroundColor().getG() << scene.getBackgroundColor().getB() << "]" << std::endl;
+
 	if (sceneData.contains("lightsources")) {
 		// Load lights
 		for (const auto& lightData : sceneData["lightsources"]) {
@@ -151,6 +149,8 @@ Image Raytracer::readJSON(const std::string& filename) {
 						Color(lightData["intensity"][0], lightData["intensity"][1], lightData["intensity"][2])
 				));
 			}
+			std::cout << "Light" << scene.getLights()[0]->getPosition() << std::endl;
+
 		}
 	}
 	std::cout << "Lights loaded" << std::endl;
@@ -173,6 +173,7 @@ Image Raytracer::readJSON(const std::string& filename) {
 		} else {
 			material = Material(0.5f, 0.5f, 32, Color(1, 1, 1), Color(1, 1, 1), false, 0.0f, false, 1.0f);
 		}
+		std::cout << "Material ks" << material.getKs() << std::endl;
 
 		if (shapeData["type"] == "sphere") {
 			scene.addShape(std::make_shared<Sphere>(
@@ -197,6 +198,6 @@ Image Raytracer::readJSON(const std::string& filename) {
 			));
 		}
 	}
-	return Image(camera.getWidth(), camera.getHeight());
+	return Image(camera->getWidth(), camera->getHeight());
 }
 

@@ -25,6 +25,7 @@ class Scene {
 		Color getBackgroundColor() const;
 		std::shared_ptr<Shape> getLastHitObject() const;
 		std::vector<std::shared_ptr<Light>> getLights() const;
+		void setBackgroundColor(Color color);
 		//Iterates over all shapes to find the closest intersection.
 };
 

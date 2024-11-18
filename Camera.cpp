@@ -21,7 +21,6 @@ PinholeCamera::PinholeCamera(int width, int height,
 	setUpVector(crossProduct(rightVector, forwardVector));	//TODO: check if it makes a difference
 }
 
-PinholeCamera::~PinholeCamera() {}
 
 //methods
 /**
@@ -74,7 +73,6 @@ OrthographicCamera::OrthographicCamera(int width, int height,
 	setUpVector(crossProduct(rightVector, forwardVector));	//TODO: check if it makes a difference
 }
 
-OrthographicCamera::~OrthographicCamera() {}
 
 Ray OrthographicCamera::generateRay(float u, float v) const {
 

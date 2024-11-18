@@ -24,6 +24,7 @@ class Camera {
 
 	public:
 		Camera() = default;
+		virtual ~Camera() = default;
 		//methods
 		virtual Ray generateRay(float x, float y) const  = 0;
 
@@ -62,7 +63,7 @@ class PinholeCamera: public Camera {
 			   Vector3 upVector,
 			   float fov, float exposure);
 
-		~PinholeCamera(); // destructor
+		~PinholeCamera() override = default; // destructor
 		//methods
 		Ray generateRay(float x, float y) const override;
 
@@ -82,7 +83,7 @@ class OrthographicCamera : public Camera {
 						   Vector3 upVector,
 						   float exposure);
 
-		~OrthographicCamera(); // destructor
+		~OrthographicCamera() override = default; // destructor
 
 		Ray generateRay(float u, float v) const override;
 

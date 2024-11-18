@@ -8,7 +8,7 @@
 
 class Color {
 	private:
-		uint8_t r, g, b;
+		float r, g, b;
 	public:
 	// Default constructor
 		Color();
@@ -17,16 +17,16 @@ class Color {
 		~Color();
 
 		//getters
-		uint8_t getR() const;
-		uint8_t getG() const;
-		uint8_t getB() const;
+		float getR() const;
+		float getG() const;
+		float getB() const;
 
 		//setters
-		void setR(unsigned int r);
-		void setG(unsigned int g);
-		void setB(unsigned int b);
-		void setRGB(unsigned int r, unsigned int g, unsigned int b);
-		void setRGBFloat(float r, float g, float b);
+		void setR(float r);
+		void setG(float g);
+		void setB(float b);
+		void setRGB(float r, float g, float b);
+		//void setRGBFloat(float r, float g, float b);
 
 		//operators
 		Color operator*(float s) const;

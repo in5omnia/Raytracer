@@ -18,16 +18,11 @@ class Raytracer {
 	private:
 		int nbounces;
 		std::string rendermode;
-		PinholeCamera camera;
+		std::shared_ptr<Camera> camera = nullptr;
 		Scene scene;
 
 	public:
 		Raytracer();
-		Raytracer(int nbounces,
-				  std::string rendermode,
-				  PinholeCamera& camera,
-				  Scene& scene
-				  );
 		void render(Image& image);
 		Color traceRay(const Ray& ray);
 		Color shadeBlinnPhong(const Ray& ray, float& t);
