@@ -1,4 +1,5 @@
 #include "Raytracer.h"
+#include <omp.h>
 
 Raytracer::Raytracer() {}
 
@@ -7,6 +8,7 @@ void Raytracer::render(Image& image) {
 	int width = image.getWidth();
 	int height = image.getHeight();
 
+	//#pragma omp parallel for
 	for (int y = 0; y < height; ++y) {		//bottom to top
 		for (int x = 0; x < width; ++x) {	//left to right
 			//Normalized pixel coordinates
@@ -16,7 +18,6 @@ void Raytracer::render(Image& image) {
 
 			Ray ray = camera->generateRay(u, v);
 			Color color = traceRay(ray);
-
 			image.setPixelColor(x, y, color);
 		}
 	}
@@ -28,7 +29,7 @@ Color Raytracer::traceRay(const Ray& ray) {
 
 	if (rendermode == "binary"){
 		float t;  // Distance to the closest intersection
-		if (scene.intersect(ray, t)) {
+		if (scene.intersect(ray, t, false, 0.0f)) {
 			// If an intersection occurs, return red for the object
 			//std::cout << "Raytracer: Intersection detected" << std::endl;
 			return Color(1.0f, 0.0f, 0.0f);  // Red color
@@ -38,7 +39,7 @@ Color Raytracer::traceRay(const Ray& ray) {
 	}
 	else if (rendermode == "phong") {
 		float t;  // Distance to the closest intersection
-		if (scene.intersect(ray, t)) {
+		if (scene.intersect(ray, t, false, 0.0f)) {
 			return shadeBlinnPhong(ray, t);  // Blinn-Phong color
 		}
 		// No intersection
@@ -60,26 +61,35 @@ Color Raytracer::traceRay(const Ray& ray) {
 
 Color Raytracer::shadeBlinnPhong(const Ray& ray, float& t) {
 	//std::cout << "Blinn Phong" << std::endl;
-	std::shared_ptr<Shape> hitObject = scene.getLastHitObject();  // Get the intersected object
-	Material material = hitObject->getMaterial();
-
-	Vector3 intersectionPoint = ray.pointAtParameter(t);
-	Vector3 n_normal = hitObject->getNormal(intersectionPoint);  // Normal at intersection
+	std::shared_ptr<Shape> hitObject;  // Get the intersected obj
+	Material material;
+	Vector3 intersectionPoint;
+	Vector3 n_normal;  // Normal at intersection
+	
+	//#pragma omp critical
+	//{
+		hitObject = scene.getLastHitObject();  // Get the intersected object
+		material = hitObject->getMaterial();
+		intersectionPoint = ray.pointAtParameter(t);
+		n_normal = hitObject->getNormal(intersectionPoint);  // Normal at intersection
+	//}
 	Vector3 v_viewDir = (ray.getOrigin() - intersectionPoint).normalize();
 
-	Color finalColor(0.0f, 0.0f, 0.0f);  // Initialize final color
-	/*Color ambientColor = material.diffuseColor * 0.1f;  // Adjust base ambient light
 
-    finalColor = ambientColor;  // Start with ambient contribution*/
+	Color finalColor(0.0f, 0.0f, 0.0f);  // Initialize final color
+	Color ambientColor = material.getDiffuseColor() * Ka;  // Adjust base ambient light
+    finalColor += ambientColor;  // Start with ambient contribution
+
 
 	for (const std::shared_ptr<Light>& light : scene.getLights()) {
 		Vector3 l_lightDir = (light->getPosition() - intersectionPoint).normalize();
 		Color lightIntensity = light->getIntensity();
+		float lightDistance = (light->getPosition() - intersectionPoint).norm();
 
-		/*//Check for shadows (optional but recommended)
-		if (scene.isInShadow(intersectionPoint, lightDir)) {
+		//Check for shadows
+		if (scene.isInShadow(intersectionPoint, l_lightDir, lightDistance, n_normal)) {
 			continue;  // Skip light contribution if in shadow
-		}*/
+		}
 
 		// Diffuse component
 		float diffuseFactor = std::max(0.0f, dotProduct(n_normal, l_lightDir));
@@ -93,6 +103,8 @@ Color Raytracer::shadeBlinnPhong(const Ray& ray, float& t) {
 		// Combine components for this light
 		finalColor += diffuse + specular;
 	}
+
+	//finalColor = finalColor * 0.9f;
 
 	return finalColor.clamp(0.0f, 1.0f);  // Clamp color values
 }

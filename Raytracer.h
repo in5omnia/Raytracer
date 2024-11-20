@@ -14,6 +14,8 @@
 #include "Light.h"
 #include "Material.h"
 
+#define Ka 0.2f
+
 class Raytracer {
 	private:
 		int nbounces;

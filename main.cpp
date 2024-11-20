@@ -7,12 +7,10 @@
 #include "Vector3.h"
 #include "Camera.h"
 #include "Raytracer.h"
-
-
-void readJSON(const std::string& filename);	//will return a scene object
-
+#include <omp.h>
 
 int main() {
+	double time;
 	//try {
 		/*std::cout << "Starting image tests...\n\n";
 		PinholeCamera camera(1200, 800, Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 1.0f), Vector3(0.0f, 1.0f, 0.0f), 45.0f, 0.1f);
@@ -38,7 +36,12 @@ int main() {
 
 		Raytracer raytracer = Raytracer();
 		Image image = raytracer.readJSON("jsons/simple_phong.json");
+
+		time = omp_get_wtime();
 		raytracer.render(image);
+
+		time = omp_get_wtime() - time;
+		std::cout << "Time: " << time << "s" << std::endl;
 		image.writePPM("blinnPhong.ppm");
 		return 0;
 

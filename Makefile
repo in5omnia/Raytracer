@@ -1,6 +1,10 @@
 # Compiler settings
-CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -O2
+CXX = clang++
+
+# Compiler and linker flags
+CXXFLAGS = -std=c++17 -Wall -Wextra -O3 -Xpreprocessor -fopenmp -I/opt/homebrew/opt/libomp/include
+LDFLAGS = -L/opt/homebrew/opt/libomp/lib
+LDLIBS = -lomp
 
 # Source files (all cpp files in current directory)
 SRCS = $(wildcard *.cpp)
@@ -14,7 +18,7 @@ all: $(TARGET)
 
 # Link object files
 $(TARGET): $(OBJS)
-	$(CXX) $(OBJS) -o $@
+	$(CXX) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)
 
 # Compile source files
 %.o: %.cpp
