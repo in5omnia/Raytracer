@@ -12,7 +12,7 @@ class Scene {
 		Color backgroundColor;
 		std::vector<std::shared_ptr<Shape>> shapes;
 		std::vector<std::shared_ptr<Light>> lights;
-		std::shared_ptr<Shape> lastHitObject = nullptr;
+		//std::shared_ptr<Shape> lastHitObject = nullptr;
 
 	public:
 		Scene() = default;
@@ -21,12 +21,12 @@ class Scene {
 		~Scene();
 		void addShape(std::shared_ptr<Shape> shape);
 		void addLight(std::shared_ptr<Light> light);
-		bool intersect(const Ray& ray, float& t, bool limitDistance, float maxDistance);
+		std::shared_ptr<Shape> intersect(const Ray& ray, float& t, bool limitDistance, float maxDistance, std::shared_ptr<Shape> hitObject);
 		Color getBackgroundColor() const;
-		std::shared_ptr<Shape> getLastHitObject() const;
+		//std::shared_ptr<Shape> getLastHitObject() const;
 		std::vector<std::shared_ptr<Light>> getLights() const;
 		void setBackgroundColor(Color color);
-		bool isInShadow(const Vector3& intersectionPoint, const Vector3& lightDir, float lightDistance, const Vector3& surfaceNormal);
+		bool isInShadow(const Vector3& intersectionPoint, const Vector3& lightDir, float lightDistance, const Vector3& surfaceNormal, std::shared_ptr<Shape> hitObject);
 		//Iterates over all shapes to find the closest intersection.
 };
 

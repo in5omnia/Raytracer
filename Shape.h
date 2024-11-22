@@ -3,6 +3,7 @@
 #include "Material.h"
 #include "Ray.h"
 #include "Vector3.h"
+#include <string>
 
 
 class Shape {
@@ -16,6 +17,7 @@ class Shape {
 		//Pure virtual function for intersection test.
 		virtual Vector3 getNormal(const Vector3& point) = 0; //note: triangle doesnt use point
 		//Returns the surface normal at a point.
+		virtual std::string toString() const = 0;
 };
 
 
@@ -29,6 +31,7 @@ class Sphere : public Shape {
 		//methods
 		bool intersect(const Ray& ray, float& t) override;
 		Vector3 getNormal(const Vector3& point) override;
+		std::string toString() const override { return "Sphere"; }
 };
 
 
@@ -45,6 +48,7 @@ class Cylinder : public Shape {
 		bool intersect(const Ray& ray, float& t) override;
 		bool isWithinHeight(const Vector3& point) const;
 		Vector3 getNormal(const Vector3& point) override;
+		std::string toString() const override { return "Cylinder"; }
 };
 
 
@@ -59,6 +63,7 @@ class Triangle : public Shape {
 		//methods
 		bool intersect(const Ray& ray, float& t) override;
 		Vector3 getNormal(const Vector3& point) override;
+		std::string toString() const override { return "Triangle"; }
 };
 
 

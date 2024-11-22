@@ -27,7 +27,6 @@ PinholeCamera::PinholeCamera(int width, int height,
  * Generates a ray for given normalized screen coordinates.
 */
 Ray PinholeCamera::generateRay(float u, float v) const {
-	//TODO: implement this
 
 	// Compute image plane dimensions
 	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
@@ -114,7 +113,7 @@ void Camera::calculateForwardVector() {
 	this->forwardVector = (lookAt - position).normalize();
 }
 
-void Camera::calculateRightVector() {	//TODO: must be called after calculateForwardVector!!
+void Camera::calculateRightVector() {	// must be called after calculateForwardVector!!
 	this->rightVector = crossProduct(forwardVector, upVector).normalize();
 }
 

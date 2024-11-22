@@ -29,7 +29,8 @@ Color Raytracer::traceRay(const Ray& ray) {
 
 	if (rendermode == "binary"){
 		float t;  // Distance to the closest intersection
-		if (scene.intersect(ray, t, false, 0.0f)) {
+		std::shared_ptr<Shape> hitObject = scene.intersect(ray, t, false, 0.0f, nullptr);
+		if (hitObject != nullptr) {
 			// If an intersection occurs, return red for the object
 			//std::cout << "Raytracer: Intersection detected" << std::endl;
 			return Color(1.0f, 0.0f, 0.0f);  // Red color
@@ -39,8 +40,9 @@ Color Raytracer::traceRay(const Ray& ray) {
 	}
 	else if (rendermode == "phong") {
 		float t;  // Distance to the closest intersection
-		if (scene.intersect(ray, t, false, 0.0f)) {
-			return shadeBlinnPhong(ray, t);  // Blinn-Phong color
+		std::shared_ptr<Shape> hitObject = scene.intersect(ray, t, false, 0.0f, nullptr);
+		if (hitObject != nullptr) {
+			return shadeBlinnPhong(ray, t, hitObject);  // Blinn-Phong color
 		}
 		// No intersection
 		//std::cout << "background" << "[" << scene.getBackgroundColor().getR() << scene.getBackgroundColor().getG() << scene.getBackgroundColor().getB() << "]" << std::endl;
@@ -59,16 +61,14 @@ Color Raytracer::traceRay(const Ray& ray) {
 }
 
 
-Color Raytracer::shadeBlinnPhong(const Ray& ray, float& t) {
+Color Raytracer::shadeBlinnPhong(const Ray& ray, float& t, std::shared_ptr<Shape> hitObject) {
 	//std::cout << "Blinn Phong" << std::endl;
-	std::shared_ptr<Shape> hitObject;  // Get the intersected obj
 	Material material;
 	Vector3 intersectionPoint;
 	Vector3 n_normal;  // Normal at intersection
 	
 	//#pragma omp critical
 	//{
-		hitObject = scene.getLastHitObject();  // Get the intersected object
 		material = hitObject->getMaterial();
 		intersectionPoint = ray.pointAtParameter(t);
 		n_normal = hitObject->getNormal(intersectionPoint);  // Normal at intersection
@@ -80,14 +80,13 @@ Color Raytracer::shadeBlinnPhong(const Ray& ray, float& t) {
 	Color ambientColor = material.getDiffuseColor() * Ka;  // Adjust base ambient light
     finalColor += ambientColor;  // Start with ambient contribution
 
-
 	for (const std::shared_ptr<Light>& light : scene.getLights()) {
 		Vector3 l_lightDir = (light->getPosition() - intersectionPoint).normalize();
 		Color lightIntensity = light->getIntensity();
 		float lightDistance = (light->getPosition() - intersectionPoint).norm();
 
 		//Check for shadows
-		if (scene.isInShadow(intersectionPoint, l_lightDir, lightDistance, n_normal)) {
+		if (scene.isInShadow(intersectionPoint, l_lightDir, lightDistance, n_normal, hitObject)) {
 			continue;  // Skip light contribution if in shadow
 		}
 
@@ -105,7 +104,6 @@ Color Raytracer::shadeBlinnPhong(const Ray& ray, float& t) {
 	}
 
 	//finalColor = finalColor * 0.9f;
-
 	return finalColor.clamp(0.0f, 1.0f);  // Clamp color values
 }
 
@@ -148,9 +146,7 @@ Image Raytracer::readJSON(const std::string& filename) {
 			sceneData["backgroundcolor"][1],
 			sceneData["backgroundcolor"][2]
 	);
-	std::cout << "background" << "[" << backgroundColor.getR() << backgroundColor.getG() << backgroundColor.getB() << "]" << std::endl;
 	scene.setBackgroundColor(backgroundColor);
-	std::cout << "background" << "[" << scene.getBackgroundColor().getR() << scene.getBackgroundColor().getG() << scene.getBackgroundColor().getB() << "]" << std::endl;
 
 	if (sceneData.contains("lightsources")) {
 		// Load lights
@@ -162,7 +158,6 @@ Image Raytracer::readJSON(const std::string& filename) {
 				));
 			}
 			std::cout << "Light" << scene.getLights()[0]->getPosition() << std::endl;
-
 		}
 	}
 	std::cout << "Lights loaded" << std::endl;
@@ -185,7 +180,6 @@ Image Raytracer::readJSON(const std::string& filename) {
 		} else {
 			material = Material(0.5f, 0.5f, 32, Color(1, 1, 1), Color(1, 1, 1), false, 0.0f, false, 1.0f);
 		}
-		std::cout << "Material ks" << material.getKs() << std::endl;
 
 		if (shapeData["type"] == "sphere") {
 			scene.addShape(std::make_shared<Sphere>(

@@ -51,12 +51,13 @@ Vector3 Sphere::getNormal(const Vector3& point) {
 /* Cylinder class */
 
 Cylinder::Cylinder(Vector3 center, Vector3 axis, float radius, float height, const Material& material) :
-				Shape(material), center(center), axis(axis), radius(radius), height(height*2.0) {}	//multiply height to match cw image
+				Shape(material), center(center), axis(axis.normalize()), radius(radius), height(height*2.0) {}	//multiply height to match cw image
 
 
-bool Cylinder::intersect(const Ray& ray, float& t){
-	Vector3 V = ray.getOrigin() - center;  // "center" is middle of the cylinder
+bool Cylinder::intersect(const Ray& ray, float& t) {
+	Vector3 V = ray.getOrigin() - center;  // Vector from cylinder center to ray origin
 
+	// Intersect with the curved surface
 	Vector3 dPerp = ray.getDirection() - axis * dotProduct(ray.getDirection(), axis);
 	Vector3 vPerp = V - axis * dotProduct(V, axis);
 
@@ -66,25 +67,55 @@ bool Cylinder::intersect(const Ray& ray, float& t){
 
 	float discriminant = b * b - 4 * a * c;
 	if (discriminant < 0) return false;  // No intersection
+	float tCurved = INFINITY;
 
-	// Intersections
-	float sqrtDisc = sqrt(discriminant);
-	float t1 = (-b - sqrtDisc) / (2.0f * a);
-	float t2 = (-b + sqrtDisc) / (2.0f * a);
+	if (discriminant >= 0) {  // Curved surface intersection
+		float sqrtDisc = sqrt(discriminant);
+		float t1 = (-b - sqrtDisc) / (2.0f * a);
+		float t2 = (-b + sqrtDisc) / (2.0f * a);
 
-	// Check both intersection points
-	Vector3 p1 = ray.pointAtParameter(t1);
-	Vector3 p2 = ray.pointAtParameter(t2);
+		// Validate intersection points for the curved surface
+		Vector3 p1 = ray.pointAtParameter(t1);
+		Vector3 p2 = ray.pointAtParameter(t2);
 
-	if (t1 > 0 && isWithinHeight(p1)) {
-		t = t1;
-		return true;
-	} else if (t2 > 0 && isWithinHeight(p2)) {
-		t = t2;
-		return true;
+		if (t1 > 0 && isWithinHeight(p1)) {
+			tCurved = t1;
+		}
+		if (t2 > 0 && isWithinHeight(p2) && t2 < tCurved) {
+			tCurved = t2;
+		}
 	}
-	return false;
+
+	// Intersect with the top base
+	Vector3 topCenter = center + axis * (height / 2.0f);	//center of the top base
+	float denominator = dotProduct(ray.getDirection(), axis);	//component of the ray's direction vector along the axis of the cylinder
+	float tTop = INFINITY;
+
+	//Check if the ray is parallel to the plane of the top base (when denomTop = 0) to avoid division by zero
+	if (fabs(denominator) > 1e-6) {
+		tTop = dotProduct(topCenter - ray.getOrigin(), axis) / denominator;
+		Vector3 pTop = ray.pointAtParameter(tTop);
+		if ((pTop - topCenter).norm() > radius || tTop <= 0) {  // Point outside disk or behind ray
+			tTop = INFINITY;
+		}
+	}
+
+	// Intersect with the bottom base
+	Vector3 bottomCenter = center - axis * (height / 2.0f);
+	float tBottom = INFINITY;
+	if (fabs(denominator) > 1e-6) {  // Avoid division by zero
+		tBottom = dotProduct(bottomCenter - ray.getOrigin(), axis) / denominator;
+		Vector3 pBottom = ray.pointAtParameter(tBottom);
+		if ((pBottom - bottomCenter).norm() > radius || tBottom <= 0) {  // Point outside disk or behind ray
+			tBottom = INFINITY;
+		}
+	}
+
+	// Determine the nearest valid intersection
+	t = std::min({tCurved, tTop, tBottom});
+	return t < INFINITY;
 }
+
 
 bool Cylinder::isWithinHeight(const Vector3& point) const {
 	// Project point onto the cylinder axis relative to the center
@@ -95,8 +126,18 @@ bool Cylinder::isWithinHeight(const Vector3& point) const {
 }
 
 Vector3 Cylinder::getNormal(const Vector3& point){
+	// Check if the point is on the top or bottom base
+	float projectionHeight = dotProduct(point - center, axis);
+	if (projectionHeight >= height / 2.0f) {
+		// Point is on the top base
+		return axis;
+	} else if (projectionHeight <= -height / 2.0f) {
+		// Point is on the bottom base
+		return (axis * (-1.0f));
+	}
+
 	// Project the point onto the cylinder's axis
-	Vector3 projectionOnAxis = center + axis * dotProduct(point - center, axis);
+	Vector3 projectionOnAxis = center + axis * projectionHeight;
 
 	// Compute the normal vector
 	Vector3 normal = point - projectionOnAxis;

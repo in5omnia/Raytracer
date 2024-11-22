@@ -64,4 +64,13 @@ Color Color::clamp(float min, float max) const {
 }
 
 
+std::string Color::toString() const {
+	return "( " + std::to_string(r) + ", " + std::to_string(g) + ", " + std::to_string(b) + " )";
+}
+
+
+bool Color::operator==(const Color &color) const {
+	return r == color.r && g == color.g && b == color.b;
+}
+
 

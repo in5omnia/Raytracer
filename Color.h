@@ -5,6 +5,7 @@
 #ifndef RAYTRACER_COLOR_H
 #define RAYTRACER_COLOR_H
 #include <cstdint>
+#include <string>
 
 class Color {
 	private:
@@ -34,8 +35,11 @@ class Color {
 		Color operator-(const Color& color) const;
 		Color operator+=(const Color& color);
 		Color operator*(const Color& color) const;	//element-wise multiplication
+		bool operator==(const Color& color) const;
 
 		Color clamp(float min, float max) const ;
+
+		std::string toString() const;
 
 
 

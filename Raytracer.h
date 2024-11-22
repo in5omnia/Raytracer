@@ -1,6 +1,5 @@
 #ifndef RAYTRACER_RAYTRACER_H
 #define RAYTRACER_RAYTRACER_H
-//#include <nlohmann/json.hpp>  // JSON library
 #include "json.hpp"
 #include <fstream>
 #include "Image.h"
@@ -8,7 +7,6 @@
 #include "Camera.h"
 #include "Ray.h"
 #include "Color.h"
-#include "Raytracer.h"
 #include "Scene.h"
 #include "Shape.h"
 #include "Light.h"
@@ -27,7 +25,7 @@ class Raytracer {
 		Raytracer();
 		void render(Image& image);
 		Color traceRay(const Ray& ray);
-		Color shadeBlinnPhong(const Ray& ray, float& t);
+		Color shadeBlinnPhong(const Ray& ray, float& t, std::shared_ptr<Shape> hitObject);
 
 		//read json method
 		Image readJSON(const std::string& filename);

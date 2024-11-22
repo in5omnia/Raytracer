@@ -15,33 +15,39 @@ void Scene::addLight(std::shared_ptr<Light> light){
 	lights.push_back(light);
 }
 
-bool Scene::intersect(const Ray& ray, float& t, bool limitDistance, float maxDistance){
+std::shared_ptr<Shape> Scene::intersect(const Ray& ray, float& t, bool limitDistance, float maxDistance, std::shared_ptr<Shape> hitObject){
 	//Iterates over all shapes to find the closest intersection.
 	float tmin = INFINITY;
+	std::shared_ptr<Shape> lastHitObject = nullptr;
+
 	for (const std::shared_ptr<Shape>& shape : shapes){
 		float tShape;	//distance t where the ray intersects the shape
 		//if the ray intersects the shape and the intersection is closer than the previous one
-		if (shape->intersect(ray, tShape) && tShape < tmin && ((limitDistance && tShape < maxDistance) || (!limitDistance))){
-			//std::cout << "Intersection detected" << std::endl;
+		if (shape->intersect(ray, tShape) && tShape < tmin && ((limitDistance && tShape < maxDistance /*&& hitObject != shape*/) || (!limitDistance))){
+			//DEBUG Does this work? hitObject != shape ;
 			tmin = tShape;
 			lastHitObject = shape;
 		}
 	}
 	t = tmin;
-	return t < INFINITY;
+	if (t < INFINITY)	return lastHitObject;
+	else				return nullptr;
+	//return t < INFINITY;
 }
 
-bool Scene::isInShadow(const Vector3& intersectionPoint, const Vector3& lightDir, float lightDistance, const Vector3& surfaceNormal){
+bool Scene::isInShadow(const Vector3& intersectionPoint, const Vector3& lightDir,
+					   float lightDistance, const Vector3& surfaceNormal, std::shared_ptr<Shape> hitObject){
 	float t;
-	Ray shadowRay(intersectionPoint + surfaceNormal * 0.001f, lightDir);	//ray from intersection point (plus offset) to light source
-	return intersect(shadowRay, t, true, lightDistance);
+	float offset = 0.001f;
+	Ray shadowRay(intersectionPoint + surfaceNormal * offset, lightDir);	//ray from intersection point (plus offset) to light source
+	return (intersect(shadowRay, t, true, lightDistance, hitObject) != nullptr);
 }
 
 Color Scene::getBackgroundColor() const{
 	return backgroundColor;
 }
 
-std::shared_ptr<Shape> Scene::getLastHitObject() const { return lastHitObject; }
+//std::shared_ptr<Shape> Scene::getLastHitObject() const { return lastHitObject; }
 
 std::vector<std::shared_ptr<Light> > Scene::getLights() const { return lights; }
 
