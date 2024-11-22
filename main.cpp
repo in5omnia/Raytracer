@@ -35,7 +35,7 @@ int main() {
 
 
 		Raytracer raytracer = Raytracer();
-		Image image = raytracer.readJSON("jsons/mirror_image.json");
+		Image image = raytracer.readJSON("jsons/scenePhong.json");
 
 		time = omp_get_wtime();
 		raytracer.render(image);

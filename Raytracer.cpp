@@ -42,7 +42,6 @@ Color Raytracer::traceRay(const Ray& ray, int depth) {
 			Material material = hitObject->getMaterial();
 			Vector3 intersectionPoint = ray.pointAtParameter(t);
 			Vector3 normal = hitObject->getNormal(intersectionPoint);
-			Vector3 viewDir = ray.getDirection().normalize() * (-1.0f);  // Direction toward the camera
 
 			// Handle reflections if the object is reflective
 			if (material.getIsReflective() && depth < nbounces) {

@@ -152,10 +152,14 @@ Triangle::Triangle(Vector3 v0, Vector3 v1, Vector3 v2, const Material& material)
 										Shape(material), v0(v0), v1(v1), v2(v2) {}
 
 
-Vector3 Triangle::getNormal(const Vector3& point) {
+Vector3 Triangle::getNormal(const Vector3& rayDir) {	//Note that here point is the direction of the ray
 	Vector3 E1 = v1 - v0;  // Edge 1: from v0 to v1
 	Vector3 E2 = v2 - v0;  // Edge 2: from v0 to v2
-	return crossProduct(E1, E2).normalize();
+	Vector3 normal = crossProduct(E1, E2).normalize();
+	if (dotProduct(normal, rayDir) > 0) {	//ensure normal is pointing towards the ray origin (camera)
+		return normal * -1.0f;
+	}
+	return normal;
 }
 
 bool Triangle::intersect(const Ray& ray, float& t) {
