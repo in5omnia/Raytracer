@@ -27,27 +27,30 @@ Color Raytracer::traceRay(const Ray& ray) {
 	// TODO: Implement ray tracing logic here
 	//  + consider the number of bounces
 
-	if (rendermode == "binary"){
-		float t;  // Distance to the closest intersection
-		std::shared_ptr<Shape> hitObject = scene.intersect(ray, t, false, 0.0f, nullptr);
-		if (hitObject != nullptr) {
-			// If an intersection occurs, return red for the object
-			//std::cout << "Raytracer: Intersection detected" << std::endl;
+	float t;  // Distance to the closest intersection
+	std::shared_ptr<Shape> hitObject = scene.intersect(ray, t, false, 0.0f, nullptr);
+	// Intersection detected
+	if (hitObject != nullptr) {
+		if (rendermode == "binary"){
 			return Color(1.0f, 0.0f, 0.0f);  // Red color
 		}
+		else if (rendermode == "phong") {
+			return shadeBlinnPhong(ray, t, hitObject);  // Blinn-Phong color
+		}
+	}
+	// No intersection
+	if (rendermode == "binary"){
 		// No intersection: return black for background
 		return Color(0.0f, 0.0f, 0.0f);  // Black color
 	}
 	else if (rendermode == "phong") {
-		float t;  // Distance to the closest intersection
-		std::shared_ptr<Shape> hitObject = scene.intersect(ray, t, false, 0.0f, nullptr);
-		if (hitObject != nullptr) {
-			return shadeBlinnPhong(ray, t, hitObject);  // Blinn-Phong color
-		}
-		// No intersection
+		// No intersection: return background color
 		//std::cout << "background" << "[" << scene.getBackgroundColor().getR() << scene.getBackgroundColor().getG() << scene.getBackgroundColor().getB() << "]" << std::endl;
 		return scene.getBackgroundColor();
 	}
+
+
+
 
 	if (nbounces == 0) {std::cout << "REMOVE ME" << std::endl;} //TODO: remove this line (compiler fix)
 	return Color();	//TODO: remove this line
