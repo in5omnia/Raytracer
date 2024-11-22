@@ -17,25 +17,46 @@ void Raytracer::render(Image& image) {
 			v = 1.0f - v; // Flip v if necessary
 
 			Ray ray = camera->generateRay(u, v);
-			Color color = traceRay(ray);
+			Color color = traceRay(ray, 0);
 			image.setPixelColor(x, y, color);
 		}
 	}
 }
 
-Color Raytracer::traceRay(const Ray& ray) {
+Color Raytracer::traceRay(const Ray& ray, int depth) {
 	// TODO: Implement ray tracing logic here
 	//  + consider the number of bounces
 
 	float t;  // Distance to the closest intersection
 	std::shared_ptr<Shape> hitObject = scene.intersect(ray, t, false, 0.0f, nullptr);
+	Color localColor;
 	// Intersection detected
 	if (hitObject != nullptr) {
 		if (rendermode == "binary"){
 			return Color(1.0f, 0.0f, 0.0f);  // Red color
 		}
 		else if (rendermode == "phong") {
-			return shadeBlinnPhong(ray, t, hitObject);  // Blinn-Phong color
+			localColor = shadeBlinnPhong(ray, t, hitObject);  // Blinn-Phong color
+
+			/* Reflections */
+			Material material = hitObject->getMaterial();
+			Vector3 intersectionPoint = ray.pointAtParameter(t);
+			Vector3 normal = hitObject->getNormal(intersectionPoint);
+			Vector3 viewDir = ray.getDirection().normalize() * (-1.0f);  // Direction toward the camera
+
+			// Handle reflections if the object is reflective
+			if (material.getIsReflective() && depth < nbounces) {
+				Vector3 reflectDir = ray.getDirection() - normal * 2.0f * dotProduct(ray.getDirection(), normal);
+				reflectDir = reflectDir.normalize();
+
+				Ray reflectRay(intersectionPoint + normal * 1e-4, reflectDir);  // Offset to avoid self-intersection
+				Color reflectionColor = traceRay(reflectRay, depth + 1);
+
+				// Combine local and reflected colors
+				localColor = localColor * (1.0f - material.getReflectivity()) + reflectionColor * material.getReflectivity();
+			}
+
+			return localColor;
 		}
 	}
 	// No intersection
