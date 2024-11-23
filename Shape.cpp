@@ -275,6 +275,20 @@ Vector3 Shape::getNormal(const Vector3& point){
 		return Vector3();
 	}
 }
+
+Color Shape::getTextureColor(const Vector3& point, const Image& texture){
+	if (shapeType == SPHERE) {
+		return sphere.getTextureColor(point, texture);
+	} else if (shapeType == CYLINDER) {
+		return cylinder.getTextureColor(point, texture);
+	} else if (shapeType == TRIANGLE) {
+		return triangle.getTextureColor(point, texture);
+	} else { // Invalid shape
+		std::cerr << "Invalid shape type!" << std::endl;
+		return Color();
+	}
+}
+
 Material Shape::getMaterial() const {
 	if (shapeType == SPHERE) {
 		return sphere.getMaterial();

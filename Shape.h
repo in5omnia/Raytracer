@@ -90,6 +90,7 @@ class Shape {
 		bool intersect(const Ray& ray, float& t);
 		Vector3 getNormal(const Vector3& point);
 		Material getMaterial() const;
+		Color getTextureColor(const Vector3& point, const Image& texture);
 		std::string toString() const;
 		int getShapeType() const;
 		Vector3 getV0();

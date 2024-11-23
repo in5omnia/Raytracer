@@ -9,7 +9,7 @@ void Raytracer::render(Image& image) {
 	int width = image.getWidth();
 	int height = image.getHeight();
 
-	//#pragma omp parallel for
+	#pragma omp parallel for
 	for (int y = 0; y < height; ++y) {		//bottom to top
 		for (int x = 0; x < width; ++x) {	//left to right
 			//Normalized pixel coordinates
