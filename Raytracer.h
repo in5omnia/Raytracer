@@ -24,7 +24,7 @@ class Raytracer {
 	public:
 		Raytracer();
 		void render(Image& image);
-		Color traceRay(const Ray& ray, int depth);
+		Color traceRay(const Ray& ray, int depth, std::stack<float> refractiveStack);
 		Color shadeBlinnPhong(const Ray& ray, float& t, std::shared_ptr<Shape> hitObject);
 
 		//read json method

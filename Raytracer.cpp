@@ -1,5 +1,6 @@
 #include "Raytracer.h"
 #include <omp.h>
+#include <stack>  // Include this at the top of your file
 
 Raytracer::Raytracer() {}
 
@@ -17,70 +18,106 @@ void Raytracer::render(Image& image) {
 			v = 1.0f - v; // Flip v if necessary
 
 			Ray ray = camera->generateRay(u, v);
-			Color color = traceRay(ray, 0);
+			std::stack<float> refractiveStack;
+			Color color = traceRay(ray, 0, refractiveStack);
 			image.setPixelColor(x, y, color);
 		}
 	}
 }
 
-Color Raytracer::traceRay(const Ray& ray, int depth) {
-	// TODO: Implement ray tracing logic here
-	//  + consider the number of bounces
+
+
+Color Raytracer::traceRay(const Ray& ray, int depth, std::stack<float> refractiveStack) {
+	// Base case: Limit the number of bounces
+	if (depth > nbounces) {
+		return Color(0.0f, 0.0f, 0.0f);  // Black color for exceeded recursion
+	}
 
 	float t;  // Distance to the closest intersection
 	std::shared_ptr<Shape> hitObject = scene.intersect(ray, t, false, 0.0f, nullptr);
 	Color localColor;
+
 	// Intersection detected
 	if (hitObject != nullptr) {
-		if (rendermode == "binary"){
+		if (rendermode == "binary") {
 			return Color(1.0f, 0.0f, 0.0f);  // Red color
-		}
-		else if (rendermode == "phong") {
-			localColor = shadeBlinnPhong(ray, t, hitObject);  // Blinn-Phong color
+		} else if (rendermode == "phong") {
+			// Local shading using Blinn-Phong
+			localColor = shadeBlinnPhong(ray, t, hitObject);
 
-			/* Reflections */
+			// Retrieve material and intersection details
 			Material material = hitObject->getMaterial();
 			Vector3 intersectionPoint = ray.pointAtParameter(t);
 			Vector3 normal = hitObject->getNormal(intersectionPoint);
 
-			// Handle reflections if the object is reflective
+			// **Refraction Logic**: Only process if the material is refractive
+			Color refractionColor(0.0f, 0.0f, 0.0f);  // Initialize refraction contribution
+			if (material.getIsRefractive() && depth < nbounces) {
+				Vector3 viewDir = ray.getDirection().normalize() * -1.0f;  // View direction
+				bool entering = dotProduct(viewDir, normal) > 0;  // Determine if entering or exiting
+				Vector3 adjustedNormal = entering ? normal : normal * -1.0f;
+
+				// Compute refractive indices
+				float n1 = refractiveStack.empty() ? 1.0f : refractiveStack.top();
+				float n2 = entering ? material.getRefractiveIndex() : (refractiveStack.size() > 1 ? refractiveStack.top() : 1.0f);
+				/*float n1 = entering ? 1.0f : material.getRefractiveIndex();
+				float n2 = entering ? material.getRefractiveIndex() : 1.0f;*/
+				float eta = n1 / n2;
+
+				// Compute the cosine of the incident angle
+				float cosTheta1 = -dotProduct(ray.getDirection(), adjustedNormal);
+				float sin2Theta2 = eta * eta * (1.0f - cosTheta1 * cosTheta1);
+
+				if (sin2Theta2 <= 1.0f) {  // No total internal reflection
+					float cosTheta2 = sqrt(1.0f - sin2Theta2);
+					Vector3 refractDir = ray.getDirection() * eta + adjustedNormal * (eta * cosTheta1 - cosTheta2);
+					refractDir = refractDir.normalize();
+
+					// Update stack
+					if (entering) {
+						refractiveStack.push(material.getRefractiveIndex());
+					} else if (!refractiveStack.empty()) {
+						refractiveStack.pop();
+						//refractiveStack.push(material.getRefractiveIndex());
+					}
+
+					// Offset slightly to avoid self-intersection
+					Ray refractRay(intersectionPoint - adjustedNormal * 1e-4, refractDir);
+					refractionColor = traceRay(refractRay, depth + 1, refractiveStack) * (1.0f - material.getReflectivity());
+				}
+				if (hitObject->toString() == "Cylinder") std::cout << "Depth " << depth << " n1: " << n1 << " n2: " << n2 << " Color " << refractionColor.toString() << std::endl;
+			}
+
+			// **Reflection Logic**: Keep existing reflection code intact
 			if (material.getIsReflective() && depth < nbounces) {
 				Vector3 reflectDir = ray.getDirection() - normal * 2.0f * dotProduct(ray.getDirection(), normal);
 				reflectDir = reflectDir.normalize();
 
 				Ray reflectRay(intersectionPoint + normal * 1e-4, reflectDir);  // Offset to avoid self-intersection
-				Color reflectionColor = traceRay(reflectRay, depth + 1);
+				Color reflectionColor = traceRay(reflectRay, depth + 1, refractiveStack);
 
-				// Combine local and reflected colors
-				localColor = localColor * (1.0f - material.getReflectivity()) + reflectionColor * material.getReflectivity();
+				// Combine local, reflected, and refracted colors
+				localColor = localColor * (1.0f - material.getReflectivity()) +
+							 reflectionColor * material.getReflectivity() +
+							 refractionColor;
+			} else {
+				// Combine local and refracted colors (if no reflection)
+				localColor += refractionColor;
 			}
 
+			if (hitObject->toString() != "Cylinder") std::cout << "Depth " << depth << " hitting : " << hitObject->toString() << " Color " << localColor.toString() << std::endl;
 			return localColor;
 		}
 	}
+
 	// No intersection
-	if (rendermode == "binary"){
+	if (rendermode == "binary") {
 		// No intersection: return black for background
 		return Color(0.0f, 0.0f, 0.0f);  // Black color
-	}
-	else if (rendermode == "phong") {
+	} else if (rendermode == "phong") {
 		// No intersection: return background color
-		//std::cout << "background" << "[" << scene.getBackgroundColor().getR() << scene.getBackgroundColor().getG() << scene.getBackgroundColor().getB() << "]" << std::endl;
 		return scene.getBackgroundColor();
 	}
-
-
-
-
-	if (nbounces == 0) {std::cout << "REMOVE ME" << std::endl;} //TODO: remove this line (compiler fix)
-	return Color();	//TODO: remove this line
-	/*
-	Should handle:
-	- Intersection tests with all objects in the scene. -> Scene::intersect()
-	- Shading calculations using the Blinn-Phong model.
-	- Handling reflections and refractions if implemented.
-	- Background color if no intersection occurs.
-	*/
 }
 
 
