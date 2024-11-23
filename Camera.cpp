@@ -50,70 +50,36 @@ Ray PinholeCamera::generateRay(float u, float v) const {
 }
 
 
-float PinholeCamera::getFov() const { return fov; }
-void PinholeCamera::setFov(float _fov) { fov = _fov; }
-
-/* Orthographic Camera */
-OrthographicCamera::OrthographicCamera(int width, int height,
-									   Vector3 position,
-									   Vector3 lookAt,
-									   Vector3 upVector,
-									   float exposure) {
-	this->width = width;
-	this->height = height;
-	this->position = position;
-	this->lookAt = lookAt;
-	this->upVector = upVector;
-	this->exposure = exposure;
-
-	//compute camera's basis vectors
-	calculateForwardVector();
-	calculateRightVector();
-	setUpVector(crossProduct(rightVector, forwardVector));	//TODO: check if it makes a difference
-}
-
-
-Ray OrthographicCamera::generateRay(float u, float v) const {
-
-	// Compute the ray's origin on the image plane (0.5f is subtracted to center the ray)
-	Vector3 rayOrigin = position + rightVector * (u - 0.5f) * width + upVector * (v - 0.5f) * height;
-
-	// The ray direction is fixed for orthographic projection
-	Vector3 rayDirection = forwardVector;  // Typically normalized during basis vector computation
-
-	// Return the ray
-	return Ray(rayOrigin, rayDirection);
-}
-
-
-
-/* Camera */
 
 //getters
-int Camera::getWidth() const { return width; }
-int Camera::getHeight() const { return height; }
-Vector3 Camera::getPosition() const { return position; }
-Vector3 Camera::getLookAt() const { return lookAt; }
-Vector3 Camera::getUpVector() const { return upVector; }
+int PinholeCamera::getWidth() const { return width; }
+int PinholeCamera::getHeight() const { return height; }
+Vector3 PinholeCamera::getPosition() const { return position; }
+Vector3 PinholeCamera::getLookAt() const { return lookAt; }
+Vector3 PinholeCamera::getUpVector() const { return upVector; }
+float PinholeCamera::getFov() const { return fov; }
 
-float Camera::getExposure() const { return exposure; }
-Vector3 Camera::getForwardVector() const { return forwardVector; }
-Vector3 Camera::getRightVector() const { return rightVector; }
+float PinholeCamera::getExposure() const { return exposure; }
+Vector3 PinholeCamera::getForwardVector() const { return forwardVector; }
+Vector3 PinholeCamera::getRightVector() const { return rightVector; }
+
+
 
 //setters
- void Camera::setWidth(int _width) { width = _width; }
- void Camera::setHeight(int _height) { height = _height; }
- void Camera::setPosition(Vector3 _position) { position = _position; }
- void Camera::setLookAt(Vector3 _lookAt) { lookAt = _lookAt; }
- void Camera::setUpVector(Vector3 _upVector) { upVector = _upVector; }
- void Camera::setExposure(float _exposure) { exposure = _exposure; }
+ void PinholeCamera::setWidth(int _width) { width = _width; }
+ void PinholeCamera::setHeight(int _height) { height = _height; }
+ void PinholeCamera::setPosition(Vector3 _position) { position = _position; }
+ void PinholeCamera::setLookAt(Vector3 _lookAt) { lookAt = _lookAt; }
+ void PinholeCamera::setUpVector(Vector3 _upVector) { upVector = _upVector; }
+ void PinholeCamera::setExposure(float _exposure) { exposure = _exposure; }
+ void PinholeCamera::setFov(float _fov) { fov = _fov; }
 
 //methods
-void Camera::calculateForwardVector() {
+void PinholeCamera::calculateForwardVector() {
 	this->forwardVector = (lookAt - position).normalize();
 }
 
-void Camera::calculateRightVector() {	// must be called after calculateForwardVector!!
+void PinholeCamera::calculateRightVector() {	// must be called after calculateForwardVector!!
 	this->rightVector = crossProduct(forwardVector, upVector).normalize();
 }
 

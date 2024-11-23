@@ -18,14 +18,14 @@ class Raytracer {
 	private:
 		int nbounces;
 		std::string rendermode;
-		std::shared_ptr<Camera> camera = nullptr;
+		PinholeCamera camera;
 		Scene scene;
 
 	public:
 		Raytracer();
 		void render(Image& image);
 		Color traceRay(const Ray& ray, int depth, std::stack<float> refractiveStack);
-		Color shadeBlinnPhong(const Ray& ray, float& t, std::shared_ptr<Shape> hitObject);
+		Color shadeBlinnPhong(const Ray& ray, float& t, Shape hitObject);
 
 		//read json method
 		Image readJSON(const std::string& filename);
@@ -34,6 +34,7 @@ class Raytracer {
 
 
 #endif //RAYTRACER_RAYTRACER_H
+
 /*Attributes:
 Reference to the Scene.
 Reference to the Camera.

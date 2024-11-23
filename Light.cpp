@@ -1,20 +1,17 @@
 #include "Light.h"
 
-Light::Light() {}
+PointLight::PointLight() {}
 
-Light::~Light() {}
+PointLight::PointLight(Vector3 position, Color intensity) : position(position), intensity(intensity) {}
 
-Vector3 Light::getPosition() const {
+PointLight::~PointLight() {}
+
+Vector3 PointLight::getPosition() const {
 	return position;
 }
 
-Color Light::getIntensity() const {
+Color PointLight::getIntensity() const {
 	return intensity;
 }
 
-PointLight::PointLight(Vector3 position, Color intensity) {
-	this->position = position;
-	this->intensity = intensity;
-}
 
-PointLight::~PointLight() {}

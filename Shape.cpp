@@ -2,14 +2,11 @@
 
 #include <iostream>
 
-/* Shape class */
-Shape::Shape(const Material& material): material(material) {}
 
-Material Shape::getMaterial() const { return material; }
 
 /* Sphere class */
 
-Sphere::Sphere(Vector3 center, float radius, const Material& material) : Shape(material), center(center), radius(radius) {}
+Sphere::Sphere(Vector3 center, float radius, const Material& material) : center(center), radius(radius), material(material) {}
 
 
 bool Sphere::intersect(const Ray& ray, float& t) {
@@ -48,10 +45,12 @@ Vector3 Sphere::getNormal(const Vector3& point) {
 	return (point - center).normalize();
 }
 
+Material Sphere::getMaterial() const { return material; }
+
 /* Cylinder class */
 
 Cylinder::Cylinder(Vector3 center, Vector3 axis, float radius, float height, const Material& material) :
-				Shape(material), center(center), axis(axis.normalize()), radius(radius), height(height*2.0) {}	//multiply height to match cw image
+				center(center), axis(axis.normalize()), radius(radius), height(height*2.0), material(material) {}	//multiply height to match cw image
 
 
 bool Cylinder::intersect(const Ray& ray, float& t) {
@@ -146,10 +145,12 @@ Vector3 Cylinder::getNormal(const Vector3& point){
 	return normal.normalize();
 }
 
+Material Cylinder::getMaterial() const { return material; }
+
 /* Triangle */
 
 Triangle::Triangle(Vector3 v0, Vector3 v1, Vector3 v2, const Material& material) :
-										Shape(material), v0(v0), v1(v1), v2(v2) {}
+										v0(v0), v1(v1), v2(v2), material(material) {}
 
 
 Vector3 Triangle::getNormal(const Vector3& rayDir) {	//Note that here point is the direction of the ray
@@ -190,4 +191,76 @@ bool Triangle::intersect(const Ray& ray, float& t) {
 	// Calculate t (intersection distance along ray)
 	t = invDet * dotProduct(E2, Q);
 	return t > 0;  // Intersection is valid if t is positive
+}
+
+Material Triangle::getMaterial() const { return material; }
+
+
+/* Shape */
+
+Shape::Shape(int shapeType) : shapeType(shapeType) {}
+Shape::Shape(Sphere sphere) : shapeType(SPHERE), sphere(sphere) {}
+Shape::Shape(Cylinder cylinder) : shapeType(CYLINDER), cylinder(cylinder) {}
+Shape::Shape(Triangle triangle) : shapeType(TRIANGLE), triangle(triangle) {}
+
+int Shape::getShapeType() const {
+	return shapeType;
+}
+
+bool Shape::intersect(const Ray& ray, float& t){
+	if (shapeType == SPHERE) {
+		return sphere.intersect(ray, t);
+	} else if (shapeType == CYLINDER) {
+		return cylinder.intersect(ray, t);
+	} else if (shapeType == TRIANGLE) {
+		return triangle.intersect(ray, t);
+	} else { // Invalid shape
+		std::cerr << "Invalid shape type!" << std::endl;
+		return false;
+	}
+}
+
+Vector3 Shape::getNormal(const Vector3& point){
+	if (shapeType == SPHERE) {
+		return sphere.getNormal(point);
+	} else if (shapeType == CYLINDER) {
+		return cylinder.getNormal(point);
+	} else if (shapeType == TRIANGLE) {
+		return triangle.getNormal(point);
+	} else { // Invalid shape
+		std::cerr << "Invalid shape type!" << std::endl;
+		return Vector3();
+	}
+}
+Material Shape::getMaterial() const {
+	if (shapeType == SPHERE) {
+		return sphere.getMaterial();
+	} else if (shapeType == CYLINDER) {
+		return cylinder.getMaterial();
+	} else if (shapeType == TRIANGLE) {
+		return triangle.getMaterial();
+	} else { // Invalid shape
+		std::cerr << "Invalid shape type!" << std::endl;
+		return Material();
+	}
+}
+std::string Shape::toString() const {
+	if (shapeType == SPHERE) {
+		return "Sphere";
+	} else if (shapeType == CYLINDER) {
+		return "Cylinder";
+	} else if (shapeType == TRIANGLE) {
+		return "Triangle";
+	} else { // Invalid shape
+		std::cerr << "Invalid shape type!" << std::endl;
+		return "Invalid shape";
+	}
+}
+Vector3 Shape::getV0(){
+	if (shapeType == TRIANGLE) {
+		return triangle.getV0();
+	} else {
+		std::cerr << "Invalid shape type!" << std::endl;
+		return Vector3();
+	}
 }
