@@ -21,6 +21,7 @@ void Raytracer::render(Image& image) {
 			std::stack<float> refractiveStack;
 			Color color = traceRay(ray, 0, refractiveStack);
 			// Apply linear tone mapping
+			color = color * camera->getExposure(); //not if exposure is too low
 			float maxIntensity = std::max(color.getR(), std::max(color.getG(), color.getB()));
 			if (maxIntensity > 1.0f) {
 				color = color.linearToneMap(maxIntensity);
