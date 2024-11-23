@@ -41,6 +41,8 @@ class Color {
 
 		std::string toString() const;
 
+		Color linearToneMap(float maxIntensity) const;
+
 
 
 	/*void scaleRGB(float factor);

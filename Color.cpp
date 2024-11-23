@@ -74,3 +74,11 @@ bool Color::operator==(const Color &color) const {
 }
 
 
+Color Color::linearToneMap(float maxIntensity) const {
+	float scale = 1.0f / maxIntensity;  // Scale to normalize colors
+	return Color(
+			std::min(r * scale, 1.0f),  // Clamp each channel to [0, 1]
+			std::min(g * scale, 1.0f),
+			std::min(b * scale, 1.0f)
+	);
+}

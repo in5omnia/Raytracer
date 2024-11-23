@@ -20,6 +20,11 @@ void Raytracer::render(Image& image) {
 			Ray ray = camera->generateRay(u, v);
 			std::stack<float> refractiveStack;
 			Color color = traceRay(ray, 0, refractiveStack);
+			// Apply linear tone mapping
+			float maxIntensity = std::max(color.getR(), std::max(color.getG(), color.getB()));
+			if (maxIntensity > 1.0f) {
+				color = color.linearToneMap(maxIntensity);
+			}
 			image.setPixelColor(x, y, color);
 		}
 	}
