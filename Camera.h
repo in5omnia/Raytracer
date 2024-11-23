@@ -7,14 +7,15 @@
 #include "Ray.h"
 
 
-class Camera {
-	protected:
+class PinholeCamera {
+	private:
 		int width;	//image res //TODO: int or float?
 		int height; //image res
 		Vector3 position;
 		Vector3 lookAt;
 		Vector3 upVector;
 		float exposure;
+		float fov;
 
 		Vector3 forwardVector;
 		Vector3 rightVector;
@@ -23,10 +24,18 @@ class Camera {
 		void calculateRightVector();
 
 	public:
-		Camera() = default;
-		virtual ~Camera() = default;
+		//constructor
+		PinholeCamera()= default;
+		PinholeCamera(int width, int height,
+			   Vector3 position,
+			   Vector3 lookAt,
+			   Vector3 upVector,
+			   float fov, float exposure);
+
+		~PinholeCamera() = default; // destructor
+
 		//methods
-		virtual Ray generateRay(float x, float y) const  = 0;
+		Ray generateRay(float x, float y) const;
 
 		//getters
 		std::string getType() const;
@@ -38,6 +47,7 @@ class Camera {
 		float getExposure() const;
 		Vector3 getForwardVector() const;
 		Vector3 getRightVector() const;
+		float getFov() const;
 
 		//setters
 		void setType(std::string _type);
@@ -47,47 +57,8 @@ class Camera {
 		void setLookAt(Vector3 _lookAt);
 		void setUpVector(Vector3 _upVector);
 		void setExposure(float _exposure);
-
-};
-
-class PinholeCamera: public Camera {
-	private:
-		float fov;
-
-	public:
-		//constructor
-		PinholeCamera()= default;
-		PinholeCamera(int width, int height,
-			   Vector3 position,
-			   Vector3 lookAt,
-			   Vector3 upVector,
-			   float fov, float exposure);
-
-		~PinholeCamera() override = default; // destructor
-		//methods
-		Ray generateRay(float x, float y) const override;
-
-		//getters
-		float getFov() const;
-
-		//setters
 		void setFov(float _fov);
 
 };
-
-class OrthographicCamera : public Camera {
-	public:
-		OrthographicCamera(int width, int height,
-						   Vector3 position,
-						   Vector3 lookAt,
-						   Vector3 upVector,
-						   float exposure);
-
-		~OrthographicCamera() override = default; // destructor
-
-		Ray generateRay(float u, float v) const override;
-
-};
-
 
 #endif //RAYTRACER_CAMERA_H

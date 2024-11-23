@@ -3,13 +3,14 @@
 #include "Vector3.h"
 #include "Color.h"
 
-class Light {
+class PointLight {
 	protected:
 		Vector3 position;
 		Color intensity;
 	public:
-		Light();
-		~Light();
+		PointLight();
+		PointLight(Vector3 position, Color intensity);
+		~PointLight();
 		Vector3 getPosition() const;
 		Color getIntensity() const;
 
@@ -22,11 +23,7 @@ Methods:
 Light-specific methods as needed.*/
 };
 
-class PointLight : public Light {
-	public:
-		PointLight(Vector3 position, Color intensity);
-		~PointLight();
-};
+
 
 
 

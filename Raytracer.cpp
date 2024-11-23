@@ -17,11 +17,11 @@ void Raytracer::render(Image& image) {
 			float v = (static_cast<float>(y) + 0.5f) / static_cast<float>(height);
 			v = 1.0f - v; // Flip v if necessary
 
-			Ray ray = camera->generateRay(u, v);
+			Ray ray = camera.generateRay(u, v);
 			std::stack<float> refractiveStack;
 			Color color = traceRay(ray, 0, refractiveStack);
 			// Apply linear tone mapping
-			color = color * camera->getExposure(); //TODO: What if exposure is too low
+			color = color * camera.getExposure(); //not if exposure is too low
 			float maxIntensity = std::max(color.getR(), std::max(color.getG(), color.getB()));
 			if (maxIntensity > 1.0f) {
 				color = color.linearToneMap(maxIntensity);
@@ -40,18 +40,18 @@ Color Raytracer::traceRay(const Ray& ray, int depth, std::stack<float> refractiv
 	}
 
 	float t;  // Distance to the closest intersection
-	std::shared_ptr<Shape> hitObject = scene.intersect(ray, t, false, 0.0f, nullptr);
+	Shape hitObject = scene.intersect(ray, t, false, 0.0f, Shape(NO_SHAPE));
 	Color localColor;
 
 	// Intersection detected
-	if (hitObject != nullptr) {
+	if (hitObject.getShapeType() != NO_SHAPE) {
 		if (rendermode == "binary") {
 			return Color(1.0f, 0.0f, 0.0f);  // Red color
 		} else if (rendermode == "phong") {
 			// Retrieve material and intersection details
-			Material material = hitObject->getMaterial();
+			Material material = hitObject.getMaterial();
 			Vector3 intersectionPoint = ray.pointAtParameter(t);
-			Vector3 normal = hitObject->getNormal(intersectionPoint);
+			Vector3 normal = hitObject.getNormal(intersectionPoint);
 
 			// Local shading using Blinn-Phong
 			localColor = shadeBlinnPhong(ray, t, hitObject);
@@ -59,7 +59,7 @@ Color Raytracer::traceRay(const Ray& ray, int depth, std::stack<float> refractiv
 			// Apply texture if available
 			if (material.hasTextureMap()) {
 				std::cout << "Texture mapping" << std::endl;
-				Color textureColor = hitObject->getTextureColor(intersectionPoint, material.getTexture());
+				Color textureColor = hitObject.getTextureColor(intersectionPoint, material.getTexture());
 				localColor = localColor * (1.0f - material.getKd()) + textureColor * material.getKd();
 			}
 
@@ -98,7 +98,7 @@ Color Raytracer::traceRay(const Ray& ray, int depth, std::stack<float> refractiv
 					Ray refractRay(intersectionPoint - adjustedNormal * 1e-4, refractDir);
 					refractionColor = traceRay(refractRay, depth + 1, refractiveStack) * (1.0f - material.getReflectivity());
 				}
-				if (hitObject->toString() == "Cylinder") std::cout << "Depth " << depth << " n1: " << n1 << " n2: " << n2 << " Color " << refractionColor.toString() << std::endl;
+				if (hitObject.toString() == "Cylinder") std::cout << "Depth " << depth << " n1: " << n1 << " n2: " << n2 << " Color " << refractionColor.toString() << std::endl;
 			}
 
 			// **Reflection Logic**: Keep existing reflection code intact
@@ -118,7 +118,7 @@ Color Raytracer::traceRay(const Ray& ray, int depth, std::stack<float> refractiv
 				localColor += refractionColor;
 			}
 
-			if (hitObject->toString() != "Cylinder") std::cout << "Depth " << depth << " hitting : " << hitObject->toString() << " Color " << localColor.toString() << std::endl;
+			if (hitObject.toString() != "Cylinder") std::cout << "Depth " << depth << " hitting : " << hitObject.toString() << " Color " << localColor.toString() << std::endl;
 			return localColor;
 		}
 	}
@@ -134,7 +134,7 @@ Color Raytracer::traceRay(const Ray& ray, int depth, std::stack<float> refractiv
 }
 
 
-Color Raytracer::shadeBlinnPhong(const Ray& ray, float& t, std::shared_ptr<Shape> hitObject) {
+Color Raytracer::shadeBlinnPhong(const Ray& ray, float& t, Shape hitObject) {
 	//std::cout << "Blinn Phong" << std::endl;
 	Material material;
 	Vector3 intersectionPoint;
@@ -142,9 +142,9 @@ Color Raytracer::shadeBlinnPhong(const Ray& ray, float& t, std::shared_ptr<Shape
 	
 	//#pragma omp critical
 	//{
-		material = hitObject->getMaterial();
+		material = hitObject.getMaterial();
 		intersectionPoint = ray.pointAtParameter(t);
-		n_normal = hitObject->getNormal(intersectionPoint);  // Normal at intersection
+		n_normal = hitObject.getNormal(intersectionPoint);  // Normal at intersection
 	//}
 	Vector3 v_viewDir = (ray.getOrigin() - intersectionPoint).normalize();
 
@@ -153,10 +153,10 @@ Color Raytracer::shadeBlinnPhong(const Ray& ray, float& t, std::shared_ptr<Shape
 	Color ambientColor = material.getDiffuseColor() * Ka;  // Adjust base ambient light
     finalColor += ambientColor;  // Start with ambient contribution
 
-	for (const std::shared_ptr<Light>& light : scene.getLights()) {
-		Vector3 l_lightDir = (light->getPosition() - intersectionPoint).normalize();
-		Color lightIntensity = light->getIntensity();
-		float lightDistance = (light->getPosition() - intersectionPoint).norm();
+	for (PointLight light : scene.getPointLights()) {
+		Vector3 l_lightDir = (light.getPosition() - intersectionPoint).normalize();
+		Color lightIntensity = light.getIntensity();
+		float lightDistance = (light.getPosition() - intersectionPoint).norm();
 
 		//Check for shadows
 		if (scene.isInShadow(intersectionPoint, l_lightDir, lightDistance, n_normal, hitObject)) {
@@ -200,7 +200,7 @@ Image Raytracer::readJSON(const std::string& filename) {
 	// Load camera
 	auto camData = j["camera"];
 	if (camData["type"] == "pinhole") {
-		camera = std::make_shared<PinholeCamera>(
+		camera = PinholeCamera(
 				camData["width"],
 				camData["height"],
 				Vector3(camData["position"][0], camData["position"][1], camData["position"][2]),
@@ -211,7 +211,7 @@ Image Raytracer::readJSON(const std::string& filename) {
 		);
 	} // if other types of cameras are added, add them here
 
-	std::cout << "Camera loaded" << "width" << camera->getWidth() << std::endl;
+	std::cout << "Camera loaded" << "width" << camera.getWidth() << std::endl;
 	// Load scene
 	auto sceneData = j["scene"];
 	Color backgroundColor(
@@ -225,12 +225,12 @@ Image Raytracer::readJSON(const std::string& filename) {
 		// Load lights
 		for (const auto& lightData : sceneData["lightsources"]) {
 			if (lightData["type"] == "pointlight") {
-				scene.addLight(std::make_shared<PointLight>(
+				scene.addPointLight(PointLight(
 						Vector3(lightData["position"][0], lightData["position"][1], lightData["position"][2]),
 						Color(lightData["intensity"][0], lightData["intensity"][1], lightData["intensity"][2])
 				));
 			}
-			std::cout << "Light" << scene.getLights()[0]->getPosition() << std::endl;
+			std::cout << "Light" << scene.getPointLights()[0].getPosition() << std::endl;
 		}
 	}
 	std::cout << "Lights loaded" << std::endl;
@@ -264,14 +264,15 @@ Image Raytracer::readJSON(const std::string& filename) {
 		} else {
 			material = Material(0.5f, 0.5f, 32, Color(1, 1, 1), Color(1, 1, 1), false, 0.0f, false, 1.0f);
 		}
+
 		if (shapeData["type"] == "sphere") {
-			scene.addShape(std::make_shared<Sphere>(
+			scene.addSphere(Sphere(
 					Vector3(shapeData["center"][0], shapeData["center"][1], shapeData["center"][2]),
 					shapeData["radius"],
 					material
 			));
 		} else if (shapeData["type"] == "cylinder") {
-			scene.addShape(std::make_shared<Cylinder>(
+			scene.addCylinder(Cylinder(
 					Vector3(shapeData["center"][0], shapeData["center"][1], shapeData["center"][2]),
 					Vector3(shapeData["axis"][0], shapeData["axis"][1], shapeData["axis"][2]),
 					shapeData["radius"],
@@ -279,7 +280,7 @@ Image Raytracer::readJSON(const std::string& filename) {
 					material
 			));
 		} else if (shapeData["type"] == "triangle") {
-			scene.addShape(std::make_shared<Triangle>(
+			scene.addTriangle(Triangle(
 					Vector3(shapeData["v0"][0], shapeData["v0"][1], shapeData["v0"][2]),
 					Vector3(shapeData["v1"][0], shapeData["v1"][1], shapeData["v1"][2]),
 					Vector3(shapeData["v2"][0], shapeData["v2"][1], shapeData["v2"][2]),
@@ -287,6 +288,6 @@ Image Raytracer::readJSON(const std::string& filename) {
 			));
 		}
 	}
-	return Image(camera->getWidth(), camera->getHeight());
+	return Image(camera.getWidth(), camera.getHeight());
 }
 

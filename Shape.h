@@ -6,76 +6,95 @@
 #include "Image.h"
 #include <string>
 
-
-class Shape {
-	protected:
-		Material material;
-	public:
-		Shape(const Material& material);
-		virtual ~Shape() = default;
-		virtual bool intersect(const Ray& ray, float& t) = 0;
-		Material getMaterial() const;
-		//Pure virtual function for intersection test.
-		virtual Vector3 getNormal(const Vector3& point) = 0; //note: triangle doesnt use point
-		//Returns the surface normal at a point.
-		virtual Color getTextureColor(const Vector3& point, const Image& texture) = 0;
-		virtual std::string toString() const = 0;
-		virtual Vector3 getV0() = 0;	//DEBUG TODO: remove
-};
+#define SPHERE 0
+#define CYLINDER 1
+#define TRIANGLE 2
+#define NO_SHAPE -1
 
 
-class Sphere : public Shape {
+class Sphere {
 	private:
 		Vector3 center;
 		float radius;
+		Material material;
 	public:
+		Sphere() = default;
 		Sphere(Vector3 center, float radius, const Material& material);
+		~Sphere() = default;
 
 		//methods
-		bool intersect(const Ray& ray, float& t) override;
-		Vector3 getNormal(const Vector3& point) override;
-		Color getTextureColor(const Vector3& point, const Image& texture) override;
-		std::string toString() const override { return "Sphere"; }
-		Vector3 getV0() override { return 0; }	//DEBUG TODO: remove
+		bool intersect(const Ray& ray, float& t);
+		Vector3 getNormal(const Vector3& point);
+		Material getMaterial() const;
+		Color getTextureColor(const Vector3& point, const Image& texture);
+		std::string toString() const { return "Sphere"; }
 };
 
 
-class Cylinder : public Shape {
+class Cylinder {
 	private:
 		Vector3 center;
 		Vector3 axis;
 		float radius;
 		float height;
+		Material material;
 	public:
+		Cylinder() = default;
 		Cylinder(Vector3 center, Vector3 axis, float radius, float height, const Material& material);
+		~Cylinder() = default;
 
 		//methods
-		bool intersect(const Ray& ray, float& t) override;
+		bool intersect(const Ray& ray, float& t);
 		bool isWithinHeight(const Vector3& point) const;
-		Vector3 getNormal(const Vector3& point) override;
-		Color getTextureColor(const Vector3& point, const Image& texture) override;
-		std::string toString() const override { return "Cylinder"; }
-	 	Vector3 getV0() override { return 0; }	//DEBUG TODO: remove
+		Vector3 getNormal(const Vector3& point);
+		Material getMaterial() const;
+		Color getTextureColor(const Vector3& point, const Image& texture);
+		std::string toString() const { return "Cylinder"; }
 };
 
 
-class Triangle : public Shape {
+class Triangle {
 	private:
 		Vector3 v0;
 		Vector3 v1;
 		Vector3 v2;
+		Material material;
 	public:
+		Triangle() = default;
 		Triangle(Vector3 v0, Vector3 v1, Vector3 v2, const Material& material);
+		~Triangle() = default;
 
 		//methods
-		bool intersect(const Ray& ray, float& t) override;
-		Vector3 getNormal(const Vector3& rayDir) override;
-		Color getTextureColor(const Vector3& point, const Image& texture) override;
-		std::string toString() const override { return "Triangle"; }
-		Vector3 getV0() override { return v0; }	//DEBUG TODO: remove
+		bool intersect(const Ray& ray, float& t);
+		Vector3 getNormal(const Vector3& rayDir);
+		Material getMaterial() const;
+		Color getTextureColor(const Vector3& point, const Image& texture);
+		std::string toString() const { return "Triangle"; }
+		Vector3 getV0() { return v0; }	//DEBUG TODO: remove
 };
 
 
+class Shape {
+	private:
+		int shapeType; //0 for sphere, 1 for cylinder, 2 for triangle
+		Sphere sphere;
+		Cylinder cylinder;
+		Triangle triangle;
+	public:
+		Shape(int shapeType);	//no shape constructor
+		Shape(Sphere sphere);
+		Shape(Cylinder cylinder);
+		Shape(Triangle triangle);
+
+		//methods
+		bool intersect(const Ray& ray, float& t);
+		Vector3 getNormal(const Vector3& point);
+		Material getMaterial() const;
+		std::string toString() const;
+		int getShapeType() const;
+		Vector3 getV0();
+
+};
 
 #endif //RAYTRACER_SHAPE_H
 
