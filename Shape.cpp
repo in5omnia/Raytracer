@@ -48,6 +48,17 @@ Vector3 Sphere::getNormal(const Vector3& point) {
 	return (point - center).normalize();
 }
 
+Color Sphere::getTextureColor(const Vector3& point, const Image& texture) {
+	Vector3 normal = (point - center).normalize();  // Convert to normalized direction
+	float u = 0.5f + atan2(normal.z, normal.x) / (2.0f * M_PI);  // Azimuthal angle
+	float v = 0.5f - asin(normal.y) / M_PI;  // Polar angle
+
+	int texX = static_cast<int>(u * texture.getWidth()) % texture.getWidth();
+	int texY = static_cast<int>(v * texture.getHeight()) % texture.getHeight();
+	return texture.getPixelColor(texX, texY);
+}
+
+
 /* Cylinder class */
 
 Cylinder::Cylinder(Vector3 center, Vector3 axis, float radius, float height, const Material& material) :
@@ -146,6 +157,20 @@ Vector3 Cylinder::getNormal(const Vector3& point){
 	return normal.normalize();
 }
 
+Color Cylinder::getTextureColor(const Vector3& point, const Image& texture) {
+	Vector3 projection = point - center;
+	float heightCoord = dotProduct(projection, axis);
+	Vector3 radial = projection - axis * heightCoord;
+
+	float u = 0.5f + atan2(radial.z, radial.x) / (2.0f * M_PI);  // Map around the circumference
+	float v = (heightCoord + height / 2.0f) / height;  // Map along the height
+
+	int texX = static_cast<int>(u * texture.getWidth()) % texture.getWidth();
+	int texY = static_cast<int>(v * texture.getHeight()) % texture.getHeight();
+	return texture.getPixelColor(texX, texY);
+}
+
+
 /* Triangle */
 
 Triangle::Triangle(Vector3 v0, Vector3 v1, Vector3 v2, const Material& material) :
@@ -191,3 +216,21 @@ bool Triangle::intersect(const Ray& ray, float& t) {
 	t = invDet * dotProduct(E2, Q);
 	return t > 0;  // Intersection is valid if t is positive
 }
+
+Color Triangle::getTextureColor(const Vector3& point, const Image& texture) {
+	Vector3 E1 = v1 - v0;  // Edge 1
+	Vector3 E2 = v2 - v0;  // Edge 2
+	Vector3 P = point - v0;
+
+	float area = crossProduct(E1, E2).norm();
+	float u = crossProduct(P, E2).norm() / area;
+	float v = crossProduct(E1, P).norm() / area;
+
+	float texU = (1 - u - v) * 0.0f + u * 1.0f + v * 0.5f;  // Example texture coords
+	float texV = (1 - u - v) * 0.0f + u * 0.0f + v * 1.0f;
+
+	int texX = static_cast<int>(texU * texture.getWidth()) % texture.getWidth();
+	int texY = static_cast<int>(texV * texture.getHeight()) % texture.getHeight();
+	return texture.getPixelColor(texX, texY);
+}
+

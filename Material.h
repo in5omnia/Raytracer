@@ -2,6 +2,7 @@
 #define RAYTRACER_MATERIAL_H
 #include "Vector3.h"
 #include "Color.h"
+#include "Image.h"
 
 class Material {
 	private:
@@ -15,12 +16,22 @@ class Material {
 		bool isRefractive;          // Refractive property
 		float refractiveIndex;      // Refractive index
 
+		// Texture mapping attributes
+		Image texture;  // Pointer to texture image
+		bool hasTexture;                 // Indicates whether a texture is applied
+
 	public:
 		// Constructor
 		Material(float ks, float kd, int specularExponent,
 				 const Color& diffuseColor, const Color& specularColor,
 				 bool isReflective, float reflectivity,
 				 bool isRefractive, float refractiveIndex);
+
+		Material(float ks, float kd, int specularExponent,
+				 const Color& diffuseColor, const Color& specularColor,
+				 bool isReflective, float reflectivity,
+				 bool isRefractive, float refractiveIndex,
+				 const Image& texture);
 
 		// Default Constructor
 		Material();
@@ -34,6 +45,11 @@ class Material {
 		Color getSpecularColor() const;
 		float getReflectivity() const;
 		float getRefractiveIndex() const;
+
+		// Texture-related methods
+		bool hasTextureMap() const;
+		void setTexture(Image& tex);
+		const Image& getTexture() const;
 };
 
 

@@ -42,7 +42,7 @@ int main() {
 
 		time = omp_get_wtime() - time;
 		std::cout << "Time: " << time << "s" << std::endl;
-		image.writePPM("blinnPhong.ppm");
+		image.writePPM("results/blinnPhong.ppm");
 		return 0;
 
 }

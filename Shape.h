@@ -3,6 +3,7 @@
 #include "Material.h"
 #include "Ray.h"
 #include "Vector3.h"
+#include "Image.h"
 #include <string>
 
 
@@ -17,6 +18,7 @@ class Shape {
 		//Pure virtual function for intersection test.
 		virtual Vector3 getNormal(const Vector3& point) = 0; //note: triangle doesnt use point
 		//Returns the surface normal at a point.
+		virtual Color getTextureColor(const Vector3& point, const Image& texture) = 0;
 		virtual std::string toString() const = 0;
 		virtual Vector3 getV0() = 0;	//DEBUG TODO: remove
 };
@@ -32,6 +34,7 @@ class Sphere : public Shape {
 		//methods
 		bool intersect(const Ray& ray, float& t) override;
 		Vector3 getNormal(const Vector3& point) override;
+		Color getTextureColor(const Vector3& point, const Image& texture) override;
 		std::string toString() const override { return "Sphere"; }
 		Vector3 getV0() override { return 0; }	//DEBUG TODO: remove
 };
@@ -50,6 +53,7 @@ class Cylinder : public Shape {
 		bool intersect(const Ray& ray, float& t) override;
 		bool isWithinHeight(const Vector3& point) const;
 		Vector3 getNormal(const Vector3& point) override;
+		Color getTextureColor(const Vector3& point, const Image& texture) override;
 		std::string toString() const override { return "Cylinder"; }
 	 	Vector3 getV0() override { return 0; }	//DEBUG TODO: remove
 };
@@ -66,6 +70,7 @@ class Triangle : public Shape {
 		//methods
 		bool intersect(const Ray& ray, float& t) override;
 		Vector3 getNormal(const Vector3& rayDir) override;
+		Color getTextureColor(const Vector3& point, const Image& texture) override;
 		std::string toString() const override { return "Triangle"; }
 		Vector3 getV0() override { return v0; }	//DEBUG TODO: remove
 };

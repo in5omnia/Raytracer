@@ -21,7 +21,7 @@ void Raytracer::render(Image& image) {
 			std::stack<float> refractiveStack;
 			Color color = traceRay(ray, 0, refractiveStack);
 			// Apply linear tone mapping
-			color = color * camera->getExposure(); //not if exposure is too low
+			color = color * camera->getExposure(); //TODO: What if exposure is too low
 			float maxIntensity = std::max(color.getR(), std::max(color.getG(), color.getB()));
 			if (maxIntensity > 1.0f) {
 				color = color.linearToneMap(maxIntensity);
@@ -48,13 +48,20 @@ Color Raytracer::traceRay(const Ray& ray, int depth, std::stack<float> refractiv
 		if (rendermode == "binary") {
 			return Color(1.0f, 0.0f, 0.0f);  // Red color
 		} else if (rendermode == "phong") {
-			// Local shading using Blinn-Phong
-			localColor = shadeBlinnPhong(ray, t, hitObject);
-
 			// Retrieve material and intersection details
 			Material material = hitObject->getMaterial();
 			Vector3 intersectionPoint = ray.pointAtParameter(t);
 			Vector3 normal = hitObject->getNormal(intersectionPoint);
+
+			// Local shading using Blinn-Phong
+			localColor = shadeBlinnPhong(ray, t, hitObject);
+
+			// Apply texture if available
+			if (material.hasTextureMap()) {
+				std::cout << "Texture mapping" << std::endl;
+				Color textureColor = hitObject->getTextureColor(intersectionPoint, material.getTexture());
+				localColor = localColor * (1.0f - material.getKd()) + textureColor * material.getKd();
+			}
 
 			// **Refraction Logic**: Only process if the material is refractive
 			Color refractionColor(0.0f, 0.0f, 0.0f);  // Initialize refraction contribution
@@ -227,10 +234,14 @@ Image Raytracer::readJSON(const std::string& filename) {
 		}
 	}
 	std::cout << "Lights loaded" << std::endl;
+
+
 	// Load shapes
 	for (const auto& shapeData : sceneData["shapes"]) {
 		Material material;
+		std::cout << "shape found"<< std::endl;
 		if (shapeData.contains("material")) {
+			std::cout <<"Material found"<< std::endl;
 			auto materialData = shapeData["material"];
 			material = Material(
 					materialData["ks"],
@@ -243,10 +254,16 @@ Image Raytracer::readJSON(const std::string& filename) {
 					materialData["isrefractive"],
 					materialData["refractiveindex"]
 			);
+			if (materialData.contains("texture")) {
+				std::cout <<"Texture found"<< std::endl;
+				Image texture = Image(materialData["texture"]);
+				material.setTexture(texture);
+				std::cout <<"Texture loaded"<< std::endl;
+			}
+
 		} else {
 			material = Material(0.5f, 0.5f, 32, Color(1, 1, 1), Color(1, 1, 1), false, 0.0f, false, 1.0f);
 		}
-
 		if (shapeData["type"] == "sphere") {
 			scene.addShape(std::make_shared<Sphere>(
 					Vector3(shapeData["center"][0], shapeData["center"][1], shapeData["center"][2]),
