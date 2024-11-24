@@ -114,6 +114,10 @@ struct Vector3 {
 	bool operator!=(Vector3 v) const {
 		return x != v.x || y != v.y || z != v.z;
 	}
+	// Negation
+	Vector3 operator-() const {
+		return Vector3(-x, -y, -z);
+	}
 	/*
 	// Absolute value
 	Vector3 abs() const {

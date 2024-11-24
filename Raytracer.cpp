@@ -1,6 +1,5 @@
 #include "Raytracer.h"
-#include <omp.h>
-#include <stack>  // Include this at the top of your file
+
 
 Raytracer::Raytracer() {}
 
@@ -9,7 +8,7 @@ void Raytracer::render(Image& image) {
 	int width = image.getWidth();
 	int height = image.getHeight();
 
-	#pragma omp parallel for collapse(2)
+	#pragma omp parallel for collapse(2) schedule(static, 1)
 	for (int y = 0; y < height; ++y) {		//bottom to top
 		for (int x = 0; x < width; ++x) {	//left to right
 			//Normalized pixel coordinates
@@ -20,8 +19,12 @@ void Raytracer::render(Image& image) {
 			Ray ray = camera.generateRay(u, v);
 			std::stack<float> refractiveStack;
 			Color color = traceRay(ray, 0, refractiveStack);
+
 			// Apply linear tone mapping
-			color = color * camera.getExposure(); //not if exposure is too low
+			//Ensure exposure is not too low
+			float exposure = camera.getExposure();
+			if (exposure < 0.5) exposure = 0.5f;
+			color = color * exposure;
 			float maxIntensity = std::max(color.getR(), std::max(color.getG(), color.getB()));
 			if (maxIntensity > 1.0f) {
 				color = color.linearToneMap(maxIntensity);
@@ -30,7 +33,6 @@ void Raytracer::render(Image& image) {
 		}
 	}
 }
-
 
 
 Color Raytracer::traceRay(const Ray& ray, int depth, std::stack<float> refractiveStack) {
@@ -58,23 +60,21 @@ Color Raytracer::traceRay(const Ray& ray, int depth, std::stack<float> refractiv
 
 			// Apply texture if available
 			if (material.hasTextureMap()) {
-				std::cout << "Texture mapping" << std::endl;
 				Color textureColor = hitObject.getTextureColor(intersectionPoint, material.getTexture());
 				localColor = localColor * (1.0f - material.getKd()) + textureColor * material.getKd();
 			}
 
-			// **Refraction Logic**: Only process if the material is refractive
+			// Refraction Logic
 			Color refractionColor(0.0f, 0.0f, 0.0f);  // Initialize refraction contribution
+
 			if (material.getIsRefractive() && depth < nbounces) {
-				Vector3 viewDir = ray.getDirection().normalize() * -1.0f;  // View direction
+				Vector3 viewDir = -(ray.getDirection().normalize());  // View direction
 				bool entering = dotProduct(viewDir, normal) > 0;  // Determine if entering or exiting
-				Vector3 adjustedNormal = entering ? normal : normal * -1.0f;
+				Vector3 adjustedNormal = entering ? normal : -normal;
 
 				// Compute refractive indices
 				float n1 = refractiveStack.empty() ? 1.0f : refractiveStack.top();
 				float n2 = entering ? material.getRefractiveIndex() : (refractiveStack.size() > 1 ? refractiveStack.top() : 1.0f);
-				/*float n1 = entering ? 1.0f : material.getRefractiveIndex();
-				float n2 = entering ? material.getRefractiveIndex() : 1.0f;*/
 				float eta = n1 / n2;
 
 				// Compute the cosine of the incident angle
@@ -91,17 +91,15 @@ Color Raytracer::traceRay(const Ray& ray, int depth, std::stack<float> refractiv
 						refractiveStack.push(material.getRefractiveIndex());
 					} else if (!refractiveStack.empty()) {
 						refractiveStack.pop();
-						//refractiveStack.push(material.getRefractiveIndex());
 					}
 
 					// Offset slightly to avoid self-intersection
 					Ray refractRay(intersectionPoint - adjustedNormal * 1e-4, refractDir);
 					refractionColor = traceRay(refractRay, depth + 1, refractiveStack) * (1.0f - material.getReflectivity());
 				}
-				if (hitObject.toString() == "Cylinder") std::cout << "Depth " << depth << " n1: " << n1 << " n2: " << n2 << " Color " << refractionColor.toString() << std::endl;
 			}
 
-			// **Reflection Logic**: Keep existing reflection code intact
+			// Reflection Logic
 			if (material.getIsReflective() && depth < nbounces) {
 				Vector3 reflectDir = ray.getDirection() - normal * 2.0f * dotProduct(ray.getDirection(), normal);
 				reflectDir = reflectDir.normalize();
@@ -111,14 +109,11 @@ Color Raytracer::traceRay(const Ray& ray, int depth, std::stack<float> refractiv
 
 				// Combine local, reflected, and refracted colors
 				localColor = localColor * (1.0f - material.getReflectivity()) +
-							 reflectionColor * material.getReflectivity() +
-							 refractionColor;
-			} else {
-				// Combine local and refracted colors (if no reflection)
-				localColor += refractionColor;
+							 reflectionColor * material.getReflectivity();
 			}
+			// Combine local and refracted colors (if no reflection)
+			localColor += refractionColor;
 
-			if (hitObject.toString() != "Cylinder") std::cout << "Depth " << depth << " hitting : " << hitObject.toString() << " Color " << localColor.toString() << std::endl;
 			return localColor;
 		}
 	}
@@ -135,23 +130,14 @@ Color Raytracer::traceRay(const Ray& ray, int depth, std::stack<float> refractiv
 
 
 Color Raytracer::shadeBlinnPhong(const Ray& ray, float& t, Shape hitObject) {
-	//std::cout << "Blinn Phong" << std::endl;
-	Material material;
-	Vector3 intersectionPoint;
-	Vector3 n_normal;  // Normal at intersection
-	
-	//#pragma omp critical
-	//{
-		material = hitObject.getMaterial();
-		intersectionPoint = ray.pointAtParameter(t);
-		n_normal = hitObject.getNormal(intersectionPoint);  // Normal at intersection
-	//}
+	Material material = hitObject.getMaterial();;
+	Vector3 intersectionPoint = ray.pointAtParameter(t);
+	Vector3 n_normal = hitObject.getNormal(intersectionPoint);  // Normal at intersection
 	Vector3 v_viewDir = (ray.getOrigin() - intersectionPoint).normalize();
 
 
-	Color finalColor(0.0f, 0.0f, 0.0f);  // Initialize final color
-	Color ambientColor = material.getDiffuseColor() * Ka;  // Adjust base ambient light
-    finalColor += ambientColor;  // Start with ambient contribution
+	// Consider ambient light contribution
+	Color finalColor = material.getDiffuseColor() * Ka;  // Adjust base ambient light
 
 	for (PointLight light : scene.getPointLights()) {
 		Vector3 l_lightDir = (light.getPosition() - intersectionPoint).normalize();
@@ -176,8 +162,8 @@ Color Raytracer::shadeBlinnPhong(const Ray& ray, float& t, Shape hitObject) {
 		finalColor += diffuse + specular;
 	}
 
-	//finalColor = finalColor * 0.9f;
-	return finalColor.clamp(0.0f, 1.0f);  // Clamp color values
+	// Clamp final color to valid range
+	return finalColor.clamp(0.0f, 1.0f);
 }
 
 
@@ -230,7 +216,6 @@ Image Raytracer::readJSON(const std::string& filename) {
 						Color(lightData["intensity"][0], lightData["intensity"][1], lightData["intensity"][2])
 				));
 			}
-			std::cout << "Light" << scene.getPointLights()[0].getPosition() << std::endl;
 		}
 	}
 	std::cout << "Lights loaded" << std::endl;
@@ -239,9 +224,7 @@ Image Raytracer::readJSON(const std::string& filename) {
 	// Load shapes
 	for (const auto& shapeData : sceneData["shapes"]) {
 		Material material;
-		std::cout << "shape found"<< std::endl;
 		if (shapeData.contains("material")) {
-			std::cout <<"Material found"<< std::endl;
 			auto materialData = shapeData["material"];
 			material = Material(
 					materialData["ks"],
@@ -255,10 +238,8 @@ Image Raytracer::readJSON(const std::string& filename) {
 					materialData["refractiveindex"]
 			);
 			if (materialData.contains("texture")) {
-				std::cout <<"Texture found"<< std::endl;
 				Image texture = Image(materialData["texture"]);
 				material.setTexture(texture);
-				std::cout <<"Texture loaded"<< std::endl;
 			}
 
 		} else {
@@ -290,4 +271,5 @@ Image Raytracer::readJSON(const std::string& filename) {
 	}
 	return Image(camera.getWidth(), camera.getHeight());
 }
+
 

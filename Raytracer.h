@@ -2,6 +2,8 @@
 #define RAYTRACER_RAYTRACER_H
 #include "json.hpp"
 #include <fstream>
+#include <omp.h>
+#include <stack>  // Include this at the top of your file
 #include "Image.h"
 #include "Scene.h"
 #include "Camera.h"
@@ -11,6 +13,7 @@
 #include "Shape.h"
 #include "Light.h"
 #include "Material.h"
+
 
 #define Ka 0.2f
 
