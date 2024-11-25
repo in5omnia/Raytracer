@@ -1,0 +1,80 @@
+** Basic raytracer features (all implemented and demonstrated) **
+
+1 - Image writing (PPM Format)
+Implemented: Yes
+Demonstrated: Yes
+Successfully writes rendered images in PPM format, verified with binary and phong render modes.
+
+2 - Virtual Pin-hole Camera (5)
+Implemented: Yes
+Demonstrated: Yes
+Virtual pinhole camera correctly maps 3D world coordinates to 2D image space. Verified in test scenes.
+
+3 - Intersection tests (Sphere, Triangle, Cylinder)
+Implemented: Yes
+Demonstrated: Yes
+Ray-geometry intersection tests work for spheres, triangles, and cylinders. Verified by rendering scenes with these primitives.
+
+4 - Binary Image Writing (Intersection/No Intersection)
+Implemented: Yes
+Demonstrated: Yes
+Binary mode renders red for intersections and black for no hits. Output matches example binary images.
+
+5 - Blinn-Phong shading (5)
+Implemented: Yes
+Demonstrated: Yes
+Implemented Blinn-Phong shading for diffuse and specular lighting. Verified by rendering phong mode scenes.
+
+6 - Shadows
+Implemented: Yes
+Demonstrated: Yes
+Shadows cast by objects are correctly rendered. Verified in phong render mode.
+
+7 - Tone Mapping (Linear)
+Implemented: Yes
+Demonstrated: Yes
+Linear tone mapping applied to prevent overexposure. Verified by rendering high-intensity light scenes.
+
+8 - Reflection
+Implemented: Yes
+Demonstrated: Yes
+Reflections calculated for reflective surfaces. Verified in mirror scene outputs.
+
+9 - Refraction
+Implemented: Yes
+Demonstrated: Yes
+Refractions calculated for transparent materials with varying indices of refraction. Verified in rendered images.
+
+** Intermediate raytracer features (all implemented and demonstrated) **
+
+10 - Textures (Sphere, Triangle, Cylinder)
+Implemented: Yes
+Demonstrated: Yes
+Textures applied using UV mapping. Verified by rendering textured primitives.
+
+11 - Bounding Volume Hierarchy (Acceleration Structure)
+Implemented: Yes
+Demonstrated: Yes
+BVH implemented and validated through improved rendering efficiency and printed tree structure.
+
+** Advanced Raytracer Features (none impelemented) **
+
+12 - Antialiasing via Multi-Sampling Pixels
+Implemented: No
+Demonstrated: No
+
+13 - Defocus via Finite-Aperture Camera (Lens Sampling)
+Implemented: No
+Demonstrated: No
+
+14 - BRDF Sampling (e.g., Microfacet)
+Implemented: No
+Demonstrated: No
+
+15 - Soft Shadows via Sampling Area Lights
+Implemented: No
+Demonstrated: No
+
+16 - Multi-Bounce Path Tracing
+Implemented: No
+Demonstrated: No

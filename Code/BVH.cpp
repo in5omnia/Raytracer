@@ -1,6 +1,7 @@
 #include "BVH.h"
 
-// AABB
+/* AABB class methods */
+
 AABB::AABB(const Vector3& min, const Vector3& max) : min(min), max(max) {}
 
 bool AABB::intersect(const Ray& ray, float& tMin, float& tMax) const {
@@ -23,9 +24,6 @@ bool AABB::intersect(const Ray& ray, float& tMin, float& tMax) const {
 	return true;
 }
 
-
-
-
 AABB AABB::surroundingBox(const AABB& box1, const AABB& box2) {
 	Vector3 small(std::min(box1.min.x, box2.min.x),
 				  std::min(box1.min.y, box2.min.y),
@@ -41,7 +39,6 @@ AABB AABB::surroundingBox(const AABB& box1, const AABB& box2) {
 
 	return AABB(small, big);
 }
-
 
 int AABB::getLongestAxis() const {
 	Vector3 diagonal = max - min;
@@ -66,7 +63,7 @@ Vector3 AABB::getMax() const {
 	return max;  // Element-wise average of min and max
 }
 
-// BVHNode
+/* BVHNode class methods */
 
 // Constructor for internal nodes
 BVHNode::BVHNode(const AABB& box, std::shared_ptr<BVHNode> _leftChild, std::shared_ptr<BVHNode> _rightChild)
@@ -76,6 +73,7 @@ BVHNode::BVHNode(const AABB& box, std::shared_ptr<BVHNode> _leftChild, std::shar
 BVHNode::BVHNode(const AABB& box, const std::vector<Shape>& shapes)
 		: boundingBox(box), shapes(shapes), isLeaf(true) {}
 
+//setters and adders
 void BVHNode::setLeftChild(std::shared_ptr<BVHNode> left) {
 	leftChild = left;
 }
@@ -88,6 +86,7 @@ void BVHNode::addShape(Shape shape){
 	shapes.push_back(shape);
 }
 
+//getters
 std::vector<Shape> BVHNode::getShapes() const{
 	return shapes;
 }

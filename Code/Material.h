@@ -9,16 +9,16 @@ class Material {
 		float ks;                   // Specular coefficient
 		float kd;                   // Diffuse coefficient
 		int specularExponent;       // Specular exponent
-		Color diffuseColor;       // Diffuse color (RGB)
-		Color specularColor;      // Specular color (RGB)
+		Color diffuseColor;       	// Diffuse color (RGB)
+		Color specularColor;      	// Specular color (RGB)
 		bool isReflective;          // Reflective property
 		float reflectivity;         // Reflectivity coefficient
 		bool isRefractive;          // Refractive property
 		float refractiveIndex;      // Refractive index
 
 		// Texture mapping attributes
-		Image texture;  // Pointer to texture image
-		bool hasTexture;                 // Indicates whether a texture is applied
+		Image texture;  			// Pointer to texture image
+		bool hasTexture;            // Indicates whether a texture is applied
 
 	public:
 		// Constructor

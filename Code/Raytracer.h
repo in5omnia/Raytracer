@@ -2,7 +2,7 @@
 #define RAYTRACER_RAYTRACER_H
 #include "json.hpp"
 #include <fstream>
-#include <omp.h>
+//#include <omp.h>
 #include <stack>  // Include this at the top of your file
 #include "Image.h"
 #include "Scene.h"
