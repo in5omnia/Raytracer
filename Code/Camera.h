@@ -6,9 +6,12 @@
 #include "Vector3.h"
 #include "Ray.h"
 
+#define PINHOLE 0
+#define LENS 1
 
-class PinholeCamera {
+class Camera {
 	private:
+		int type;
 		int width;	//image res //TODO: int or float?
 		int height; //image res
 		Vector3 position;
@@ -16,6 +19,10 @@ class PinholeCamera {
 		Vector3 upVector;
 		float exposure;
 		float fov;
+
+		//lens specific
+		float apertureRadius;
+		float focalDistance;
 
 		Vector3 forwardVector;
 		Vector3 rightVector;
@@ -25,20 +32,22 @@ class PinholeCamera {
 
 	public:
 		//constructor
-		PinholeCamera()= default;
-		PinholeCamera(int width, int height,
+		Camera()= default;
+		Camera(int type, int width, int height,
 			   Vector3 position,
 			   Vector3 lookAt,
 			   Vector3 upVector,
-			   float fov, float exposure);
+			   float fov, float exposure,
+			   float apertureRadius, float focalDistance);
 
-		~PinholeCamera() = default; // destructor
+		~Camera() = default; // destructor
 
 		//methods
-		Ray generateRay(float x, float y) const;
+		Ray generateRayPinhole(float x, float y) const;
+		Ray generateRayLens(Ray pinholeRay) const;
 
 		//getters
-		std::string getType() const;
+		int getType() const;
 		int getWidth() const;
 		int getHeight() const;
 		Vector3 getPosition() const;

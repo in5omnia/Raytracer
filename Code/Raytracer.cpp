@@ -5,34 +5,113 @@ Raytracer::Raytracer() {}
 
 
 void Raytracer::render(Image& image) {
+	if (camera.getType() == LENS) {
+		return renderWithApertureSampling(image);
+	}
 	int width = image.getWidth();
 	int height = image.getHeight();
 
-
 	scene.setBVHRoot(scene.buildBVH(scene.getShapes(), 0, scene.getShapes().size()));
 	//scene.printTree(); //TODO:remove debug
+
 	//#pragma omp parallel for collapse(2) schedule(static, 1)
 	for (int y = 0; y < height; ++y) {		//bottom to top
 		for (int x = 0; x < width; ++x) {	//left to right
-			//Normalized pixel coordinates
-			float u = 1.0f - (static_cast<float>(x) + 0.5f) / static_cast<float>(width);	//(subtracting from 1 because before it was flipped)
-			float v = (static_cast<float>(y) + 0.5f) / static_cast<float>(height);
-			v = 1.0f - v; // Flip v if necessary
 
-			Ray ray = camera.generateRay(u, v);
-			std::stack<float> refractiveStack;
-			Color color = traceRay(ray, 0, refractiveStack);
+			Color finalColor(0.0f, 0.0f, 0.0f);
+			for (int s = 0; s < numPixelSamples; ++s) {  // Multi-sampling loop
+				//Random offset for pixel sampling
+				float offset_u = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+				float offset_v = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+
+				//Normalized pixel sample coordinates
+				float u = (static_cast<float>(x) + offset_u) / static_cast<float>(width);
+				float v = (static_cast<float>(y) + offset_v) / static_cast<float>(height);
+
+				// Flip u and v
+				u = 1.0f - u;
+				v = 1.0f - v;
+
+				Ray ray = camera.generateRayPinhole(u, v);
+				std::stack<float> refractiveStack;
+				finalColor += traceRay(ray, 0, refractiveStack);
+			}
+
+			// Average sample colors
+			finalColor = finalColor / static_cast<float>(numPixelSamples);
 
 			// Apply linear tone mapping
-			//Ensure exposure is not too low
 			float exposure = camera.getExposure();
-			if (exposure < 0.5) exposure = 0.5f;
-			color = color * exposure;
-			float maxIntensity = std::max(color.getR(), std::max(color.getG(), color.getB()));
+			if (exposure < 0.5) exposure = 0.5f;	// Ensure exposure is not too low
+			finalColor = finalColor * exposure;
+			float maxIntensity = std::max(finalColor.getR(), std::max(finalColor.getG(), finalColor.getB()));
 			if (maxIntensity > 1.0f) {
-				color = color.linearToneMap(maxIntensity);
+				finalColor = finalColor.linearToneMap(maxIntensity);
 			}
-			image.setPixelColor(x, y, color);
+			// Save pixel color
+			image.setPixelColor(x, y, finalColor);
+		}
+	}
+}
+
+
+void Raytracer::renderWithApertureSampling(Image& image) {
+	int width = image.getWidth();
+	int height = image.getHeight();
+
+	scene.setBVHRoot(scene.buildBVH(scene.getShapes(), 0, scene.getShapes().size()));
+	//scene.printTree(); //TODO:remove debug
+
+	//#pragma omp parallel for collapse(2) schedule(static, 1)
+	for (int y = 0; y < height; ++y) {		//bottom to top
+		for (int x = 0; x < width; ++x) {	//left to right
+
+			Color finalColor(0.0f, 0.0f, 0.0f);
+			// ** Pixel Sampling **
+			for (int s = 0; s < numPixelSamples; ++s) {
+				//Random offset for pixel sampling
+				float offset_u = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+				float offset_v = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+
+				//Normalized pixel sample coordinates
+				float u = (static_cast<float>(x) + offset_u) / static_cast<float>(width);
+				float v = (static_cast<float>(y) + offset_v) / static_cast<float>(height);
+
+				// Flip u and v
+				u = 1.0f - u;
+				v = 1.0f - v;
+
+				// ** Aperture Sampling (depth of field) **
+				Color pixelSampleColor(0.0f, 0.0f, 0.0f);
+
+				// Compute the pinhole ray as usual (avoid computing it multiple times)
+				Ray pinholeRay = camera.generateRayPinhole(u, v);
+
+				for (int apertureSample = 0; apertureSample < numApertureSamples; ++apertureSample) {
+					Ray apertureRay = camera.generateRayLens(pinholeRay);
+					std::stack<float> refractiveStack;
+					pixelSampleColor += traceRay(apertureRay, 0, refractiveStack);
+				}
+
+				// Average aperture samples
+				pixelSampleColor = pixelSampleColor / static_cast<float>(numApertureSamples);
+
+				finalColor += pixelSampleColor;
+			}
+
+			// Average sample colors
+			finalColor = finalColor / static_cast<float>(numPixelSamples);
+
+			// Apply linear tone mapping
+			float exposure = camera.getExposure();
+			if (exposure < 0.5) exposure = 0.5f;	// Ensure exposure is not too low
+			finalColor = finalColor * exposure;
+			float maxIntensity = std::max(finalColor.getR(), std::max(finalColor.getG(), finalColor.getB()));
+			if (maxIntensity > 1.0f) {
+				finalColor = finalColor.linearToneMap(maxIntensity);
+			}
+			// Save pixel color
+			image.setPixelColor(x, y, finalColor);
 		}
 	}
 }
@@ -187,19 +266,50 @@ Image Raytracer::readJSON(const std::string& filename) {
 	}
 	rendermode = j["rendermode"];
 
+	// Load raytracer settings
+	if (j.contains("nPixelSamples")) {
+		numPixelSamples = j["nPixelSamples"];
+	} else {
+		numPixelSamples = 1;
+	}
+	std::cout << "nPixelSamples = " << numPixelSamples << std::endl;
+
+	// Load raytracer settings
+	if (j.contains("nApertureSamples")) {
+		numApertureSamples = j["nApertureSamples"];
+	} else {
+		numApertureSamples = 3;
+	}
+	std::cout << "nApertureSamples = " << numApertureSamples << std::endl;
+
 	// Load camera
 	auto camData = j["camera"];
 	if (camData["type"] == "pinhole") {
-		camera = PinholeCamera(
+		camera = Camera(
+				PINHOLE,
 				camData["width"],
 				camData["height"],
 				Vector3(camData["position"][0], camData["position"][1], camData["position"][2]),
 				Vector3(camData["lookAt"][0], camData["lookAt"][1], camData["lookAt"][2]),
 				Vector3(camData["upVector"][0], camData["upVector"][1], camData["upVector"][2]),
 				camData["fov"],
-				camData["exposure"]
+				camData["exposure"],
+				0.0f, 0.0f	// No aperture radius and focal distance in pinhole cameras
 		);
-	} // if other types of cameras are added, add them here
+	} else if (camData["type"] == "lens") {
+		camera = Camera(
+				LENS,
+				camData["width"],
+				camData["height"],
+				Vector3(camData["position"][0], camData["position"][1], camData["position"][2]),
+				Vector3(camData["lookAt"][0], camData["lookAt"][1], camData["lookAt"][2]),
+				Vector3(camData["upVector"][0], camData["upVector"][1], camData["upVector"][2]),
+				camData["fov"],
+				camData["exposure"],
+				camData["apertureRadius"],
+				camData["focalDistance"]
+		);
+	}
 
 	std::cout << "Camera loaded " << "width " << camera.getWidth() << std::endl;
 	// Load scene

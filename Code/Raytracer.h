@@ -2,6 +2,7 @@
 #define RAYTRACER_RAYTRACER_H
 #include "json.hpp"
 #include <fstream>
+#include <cstdlib>
 //#include <omp.h>
 #include <stack>  // Include this at the top of your file
 #include "Image.h"
@@ -21,13 +22,16 @@
 class Raytracer {
 	private:
 		int nbounces;
+		int numPixelSamples;
+		int numApertureSamples;
 		std::string rendermode;
-		PinholeCamera camera;
+	Camera camera;
 		Scene scene;
 
 	public:
 		Raytracer();
 		void render(Image& image);
+		void renderWithApertureSampling(Image& image);
 		Color traceRay(const Ray& ray, int depth, std::stack<float> refractiveStack);
 		Color shadeBlinnPhong(const Ray& ray, float& t, Shape hitObject);
 

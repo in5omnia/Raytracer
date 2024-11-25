@@ -31,6 +31,7 @@ class Color {
 
 		//operators
 		Color operator*(float s) const;
+		Color operator/(float s) const;
 		Color operator+(const Color& color) const;
 		Color operator-(const Color& color) const;
 		Color operator+=(const Color& color);

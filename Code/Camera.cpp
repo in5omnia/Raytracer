@@ -1,20 +1,22 @@
 #include "Camera.h"
 
 
-/* PinholeCamera */
+/* Camera */
 
-PinholeCamera::PinholeCamera(int width, int height,
-			   Vector3 position,
-			   Vector3 lookAt,
-			   Vector3 upVector,
-			   float fov, float exposure) : fov(fov){
-	this->width = width;
-	this->height = height;
-	this->position = position;
-	this->lookAt = lookAt;
-	this->upVector = upVector;
-	this->exposure = exposure;
-
+Camera::Camera(int type, int width, int height,
+							 Vector3 position, Vector3 lookAt, Vector3 upVector,
+							 float fov, float exposure,
+							 float apertureRadius, float focalDistance) :
+							 type(type), width(width), height(height),
+							 position(position), lookAt(lookAt), upVector(upVector),
+							 fov(fov), exposure(exposure) {
+	if (type == LENS) {
+		this->apertureRadius = apertureRadius;
+		this->focalDistance = focalDistance;
+	} else {
+		this->apertureRadius = 0.0f;
+		this->focalDistance = 0.0f;
+	}
 	//compute camera's basis vectors
 	calculateForwardVector();
 	calculateRightVector();
@@ -26,7 +28,7 @@ PinholeCamera::PinholeCamera(int width, int height,
 /**
  * Generates a ray for given normalized screen coordinates.
 */
-Ray PinholeCamera::generateRay(float u, float v) const {
+Ray Camera::generateRayPinhole(float u, float v) const {
 
 	// Compute image plane dimensions
 	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
@@ -49,37 +51,52 @@ Ray PinholeCamera::generateRay(float u, float v) const {
 	return Ray(position, rayDirection);
 }
 
+Ray Camera::generateRayLens(Ray pinholeRay) const {
+	// Calculate the point on the focal plane
+	Vector3 focalPoint = pinholeRay.getOrigin() + pinholeRay.getDirection() * focalDistance;
+
+	// Sample a random point on the aperture disk
+	float r = apertureRadius * sqrt(static_cast<float>(rand()) / static_cast<float>(RAND_MAX));
+	float theta = 2.0f * M_PI * static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+	Vector3 apertureSamplePoint = position + rightVector * (r * cos(theta)) + upVector * (r * sin(theta));
+
+	// Create a new ray from the aperture sample to the focal point
+	Vector3 apertureSampleDir = (focalPoint - apertureSamplePoint).normalize();
+	return Ray(apertureSamplePoint, apertureSampleDir);
+}
+
 
 
 //getters
-int PinholeCamera::getWidth() const { return width; }
-int PinholeCamera::getHeight() const { return height; }
-Vector3 PinholeCamera::getPosition() const { return position; }
-Vector3 PinholeCamera::getLookAt() const { return lookAt; }
-Vector3 PinholeCamera::getUpVector() const { return upVector; }
-float PinholeCamera::getFov() const { return fov; }
+int Camera::getWidth() const { return width; }
+int Camera::getHeight() const { return height; }
+Vector3 Camera::getPosition() const { return position; }
+Vector3 Camera::getLookAt() const { return lookAt; }
+Vector3 Camera::getUpVector() const { return upVector; }
+float Camera::getFov() const { return fov; }
+int Camera::getType() const { return type; }
 
-float PinholeCamera::getExposure() const { return exposure; }
-Vector3 PinholeCamera::getForwardVector() const { return forwardVector; }
-Vector3 PinholeCamera::getRightVector() const { return rightVector; }
+float Camera::getExposure() const { return exposure; }
+Vector3 Camera::getForwardVector() const { return forwardVector; }
+Vector3 Camera::getRightVector() const { return rightVector; }
 
 
 
 //setters
- void PinholeCamera::setWidth(int _width) { width = _width; }
- void PinholeCamera::setHeight(int _height) { height = _height; }
- void PinholeCamera::setPosition(Vector3 _position) { position = _position; }
- void PinholeCamera::setLookAt(Vector3 _lookAt) { lookAt = _lookAt; }
- void PinholeCamera::setUpVector(Vector3 _upVector) { upVector = _upVector; }
- void PinholeCamera::setExposure(float _exposure) { exposure = _exposure; }
- void PinholeCamera::setFov(float _fov) { fov = _fov; }
+ void Camera::setWidth(int _width) { width = _width; }
+ void Camera::setHeight(int _height) { height = _height; }
+ void Camera::setPosition(Vector3 _position) { position = _position; }
+ void Camera::setLookAt(Vector3 _lookAt) { lookAt = _lookAt; }
+ void Camera::setUpVector(Vector3 _upVector) { upVector = _upVector; }
+ void Camera::setExposure(float _exposure) { exposure = _exposure; }
+ void Camera::setFov(float _fov) { fov = _fov; }
 
 //methods
-void PinholeCamera::calculateForwardVector() {
+void Camera::calculateForwardVector() {
 	this->forwardVector = (lookAt - position).normalize();
 }
 
-void PinholeCamera::calculateRightVector() {	// must be called after calculateForwardVector!!
+void Camera::calculateRightVector() {	// must be called after calculateForwardVector!!
 	this->rightVector = crossProduct(forwardVector, upVector).normalize();
 }
 
