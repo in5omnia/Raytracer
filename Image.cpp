@@ -77,10 +77,7 @@ bool Image::loadPPM(const std::string& filename) {
 	if (!std::filesystem::exists(filename)) {
 		std::cerr << "File does not exist: " << filename << std::endl;
 		return false;
-	} else {
-		std::cout << "File exists " << filename << std::endl;
 	}
-
 
 	std::ifstream file(filename, std::ios::binary);
 	if (!file) {

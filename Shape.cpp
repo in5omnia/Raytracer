@@ -20,7 +20,6 @@ bool Sphere::intersect(const Ray& ray, float& t) {
 
 	// No intersection
 	if (discriminant < 0) {
-		//std::cout << "No Intersection :(" << std::endl;
 		return false;
 	}
 
@@ -37,7 +36,6 @@ bool Sphere::intersect(const Ray& ray, float& t) {
 	} else {
 		return false;  // Both intersections are behind the ray origin
 	}
-	//std::cout << "Intersection detected in sphere!!" << std::endl;
 	return true;
 }
 
@@ -55,6 +53,12 @@ Color Sphere::getTextureColor(const Vector3& point, const Image& texture) {
 	int texX = static_cast<int>(u * texture.getWidth()) % texture.getWidth();
 	int texY = static_cast<int>(v * texture.getHeight()) % texture.getHeight();
 	return texture.getPixelColor(texX, texY);
+}
+
+AABB Sphere::getBoundingBox() const {
+	Vector3 min = center - Vector3(radius, radius, radius);
+	Vector3 max = center + Vector3(radius, radius, radius);
+	return AABB(min, max);
 }
 
 
@@ -172,6 +176,12 @@ Color Cylinder::getTextureColor(const Vector3& point, const Image& texture) {
 
 Material Cylinder::getMaterial() const { return material; }
 
+AABB Cylinder::getBoundingBox() const {
+	Vector3 min = center - Vector3(radius, height / 2.0f, radius);
+	Vector3 max = center + Vector3(radius, height / 2.0f, radius);
+	return AABB(min, max);
+}
+
 /* Triangle */
 
 Triangle::Triangle(Vector3 v0, Vector3 v1, Vector3 v2, const Material& material) :
@@ -237,6 +247,16 @@ Color Triangle::getTextureColor(const Vector3& point, const Image& texture) {
 
 
 Material Triangle::getMaterial() const { return material; }
+
+AABB Triangle::getBoundingBox() const {
+	Vector3 min = Vector3(std::min({v0.x, v1.x, v2.x}),
+						  std::min({v0.y, v1.y, v2.y}),
+						  std::min({v0.z, v1.z, v2.z}));
+	Vector3 max = Vector3(std::max({v0.x, v1.x, v2.x}),
+						  std::max({v0.y, v1.y, v2.y}),
+						  std::max({v0.z, v1.z, v2.z}));
+	return AABB(min, max);
+}
 
 
 /* Shape */
@@ -319,5 +339,19 @@ Vector3 Shape::getV0(){
 	} else {
 		std::cerr << "Invalid shape type!" << std::endl;
 		return Vector3();
+	}
+}
+
+
+AABB Shape::getBoundingBox() const {
+	if (shapeType == SPHERE) {
+		return sphere.getBoundingBox();
+	} else if (shapeType == CYLINDER) {
+		return cylinder.getBoundingBox();
+	} else if (shapeType == TRIANGLE) {
+		return triangle.getBoundingBox();
+	} else { // Invalid shape
+		std::cerr << "Invalid shape type!" << std::endl;
+		return AABB();
 	}
 }

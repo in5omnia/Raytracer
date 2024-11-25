@@ -8,7 +8,10 @@ void Raytracer::render(Image& image) {
 	int width = image.getWidth();
 	int height = image.getHeight();
 
-	#pragma omp parallel for collapse(2) schedule(static, 1)
+
+	scene.setBVHRoot(scene.buildBVH(scene.getShapes(), 0, scene.getShapes().size()));
+	//scene.printTree(); //TODO:remove debug
+	//#pragma omp parallel for collapse(2) schedule(static, 1)
 	for (int y = 0; y < height; ++y) {		//bottom to top
 		for (int x = 0; x < width; ++x) {	//left to right
 			//Normalized pixel coordinates
@@ -41,8 +44,9 @@ Color Raytracer::traceRay(const Ray& ray, int depth, std::stack<float> refractiv
 		return Color(0.0f, 0.0f, 0.0f);  // Black color for exceeded recursion
 	}
 
+	auto bvhRoot = scene.getBVHRoot();
 	float t;  // Distance to the closest intersection
-	Shape hitObject = scene.intersect(ray, t, false, 0.0f, Shape(NO_SHAPE));
+	Shape hitObject = scene.traverseBVH(bvhRoot, ray, t, false, 0.0f);
 	Color localColor;
 
 	// Intersection detected
@@ -145,7 +149,7 @@ Color Raytracer::shadeBlinnPhong(const Ray& ray, float& t, Shape hitObject) {
 		float lightDistance = (light.getPosition() - intersectionPoint).norm();
 
 		//Check for shadows
-		if (scene.isInShadow(intersectionPoint, l_lightDir, lightDistance, n_normal, hitObject)) {
+		if (scene.isInShadow(intersectionPoint, l_lightDir, lightDistance, n_normal)) {
 			continue;  // Skip light contribution if in shadow
 		}
 
@@ -197,7 +201,7 @@ Image Raytracer::readJSON(const std::string& filename) {
 		);
 	} // if other types of cameras are added, add them here
 
-	std::cout << "Camera loaded" << "width" << camera.getWidth() << std::endl;
+	std::cout << "Camera loaded " << "width " << camera.getWidth() << std::endl;
 	// Load scene
 	auto sceneData = j["scene"];
 	Color backgroundColor(

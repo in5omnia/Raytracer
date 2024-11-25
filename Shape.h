@@ -4,6 +4,7 @@
 #include "Ray.h"
 #include "Vector3.h"
 #include "Image.h"
+#include "BVH.h"
 #include <string>
 
 #define SPHERE 0
@@ -11,6 +12,7 @@
 #define TRIANGLE 2
 #define NO_SHAPE -1
 
+class AABB;
 
 class Sphere {
 	private:
@@ -27,6 +29,7 @@ class Sphere {
 		Vector3 getNormal(const Vector3& point);
 		Material getMaterial() const;
 		Color getTextureColor(const Vector3& point, const Image& texture);
+		AABB getBoundingBox() const;
 		std::string toString() const { return "Sphere"; }
 };
 
@@ -49,6 +52,7 @@ class Cylinder {
 		Vector3 getNormal(const Vector3& point);
 		Material getMaterial() const;
 		Color getTextureColor(const Vector3& point, const Image& texture);
+		AABB getBoundingBox() const;
 		std::string toString() const { return "Cylinder"; }
 };
 
@@ -69,6 +73,7 @@ class Triangle {
 		Vector3 getNormal(const Vector3& rayDir);
 		Material getMaterial() const;
 		Color getTextureColor(const Vector3& point, const Image& texture);
+		AABB getBoundingBox() const;
 		std::string toString() const { return "Triangle"; }
 		Vector3 getV0() { return v0; }	//DEBUG TODO: remove
 };
@@ -92,36 +97,11 @@ class Shape {
 		Material getMaterial() const;
 		Color getTextureColor(const Vector3& point, const Image& texture);
 		std::string toString() const;
+		AABB getBoundingBox() const;
 		int getShapeType() const;
 		Vector3 getV0();
-
 };
 
 #endif //RAYTRACER_SHAPE_H
 
 
-
-/*Derived Shape Classes
-Sphere
-
-Attributes:
-Vector3 center;
-float radius;
-Methods:
-Implements intersect and getNormal.
-Triangle
-
-Attributes:
-Vector3 v0, v1, v2; // Vertices
-Methods:
-Implements intersect and getNormal.
-Cylinder
-
-Attributes:
-Vector3 center;
-Vector3 axis; // Direction vector
-float radius;
-float height;
-Methods:
-Implements intersect and getNormal.
-*/
