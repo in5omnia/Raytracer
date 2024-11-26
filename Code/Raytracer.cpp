@@ -128,11 +128,21 @@ Color Raytracer::traceRay(const Ray& ray, int depth, std::stack<float> refractiv
 	Shape hitObject = scene.traverseBVH(bvhRoot, ray, t, false, 0.0f);
 	Color localColor;
 
-	// Intersection detected
-	if (hitObject.getShapeType() != NO_SHAPE) {
-		if (rendermode == "binary") {
+	if (rendermode == "binary") {
+		if (hitObject.getShapeType() == NO_SHAPE) {
+			// No intersection
+			return Color(0.0f, 0.0f, 0.0f);  // Black color
+		} else {
+			// Intersection detected
 			return Color(1.0f, 0.0f, 0.0f);  // Red color
-		} else if (rendermode == "phong") {
+		}
+	} else if (rendermode == "phong") {
+		if (hitObject.getShapeType() == NO_SHAPE) {
+			// No intersection
+			return scene.getBackgroundColor();
+		} else {
+			// Intersection detected
+
 			// Retrieve material and intersection details
 			Material material = hitObject.getMaterial();
 			Vector3 intersectionPoint = ray.pointAtParameter(t);
@@ -199,15 +209,6 @@ Color Raytracer::traceRay(const Ray& ray, int depth, std::stack<float> refractiv
 
 			return localColor;
 		}
-	}
-
-	// No intersection
-	if (rendermode == "binary") {
-		// No intersection: return black for background
-		return Color(0.0f, 0.0f, 0.0f);  // Black color
-	} else if (rendermode == "phong") {
-		// No intersection: return background color
-		return scene.getBackgroundColor();
 	}
 }
 
