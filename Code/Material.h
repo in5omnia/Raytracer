@@ -61,6 +61,7 @@ class Material {
 		Color getEmission() const;
 		bool isDiffuse() const;
 		bool hasDiffuse() const;
+		bool isPerfectMirror() const;
 };
 
 

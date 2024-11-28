@@ -23,7 +23,7 @@ Material::Material(const Color& diffuseColor, const Color& specularColor,
 		  diffuseColor(diffuseColor), specularColor(specularColor),
 		  isReflective(isReflective), reflectivity(reflectivity),
 		  isRefractive(isRefractive), refractiveIndex(refractiveIndex),
-		  hasTexture(false), roughness((roughness > 0.0f && roughness < 1.0f) ? roughness : 1.0f), emission(emission) {}
+		  hasTexture(false), roughness((roughness >= 0.0f && roughness <= 1.0f) ? roughness : 1.0f), emission(emission) {}
 
 // Default Constructor
 Material::Material()
@@ -79,3 +79,6 @@ bool Material::hasDiffuse() const {
 	return diffuseColor.getR() > 0.0f || diffuseColor.getG() > 0.0f || diffuseColor.getB() > 0.0f;
 }
 
+bool Material::isPerfectMirror() const {
+	return isReflective && reflectivity == 1.0f && !isRefractive && roughness == 0.0f && diffuseColor.isZero() && emission.isZero(); //&& metalness == 1.0f
+}

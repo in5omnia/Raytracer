@@ -41,8 +41,8 @@ class Raytracer {
 		void renderBRDFWithoutApertureSampling(Image& image);
 		void renderBRDFWithApertureSampling(Image& image);
 		Color computeDirectLighting(const Vector3& intersectionPoint, const Vector3& normal, const Vector3& viewDir, const Material& material, std::default_random_engine& rng);
-		Color microfacetBRDF(const Vector3& incident, const Vector3& reflected, const Vector3& normal, const Material& material);
-		float microfacetPDF(const Vector3& incident, const Vector3& reflected, const Vector3& normal, const Material& material);
+		Color microfacetBRDF(const Vector3& viewDir, const Vector3& reflected, const Vector3& normal, const Material& material) const;
+		float microfacetPDF(const Vector3& viewDir, const Vector3& reflected, const Vector3& normal, const Material& material);
 /*
 		Color traceRayBRDF(const Ray& ray, int depth, std::stack<float>& refractiveStack, std::default_random_engine& rng);
 		float fresnelDielectric(float cosThetaI, float etaI, float etaT) const;
@@ -66,13 +66,19 @@ class Raytracer {
 		Image readJSON(const std::string& filename);
 
 		//new
+		Color traceRayBRDFBia(const Ray& ray, int depth, std::stack<float>& refractiveStack, std::default_random_engine& rng);
+		void sampleBRDFBia(const Vector3& viewDir, const Vector3& normal, const Material& material,
+					std::default_random_engine& rng, std::stack<float>& refractiveStack,
+					Vector3& sampledDir, float& pdf, Color& brdfValue);
+
+
 		Color traceRayBRDF(const Ray& ray, int depth, std::stack<float>& refractiveStack, std::default_random_engine& rng);
 		void sampleBRDF(const Vector3& viewDir, const Vector3& normal, const Material& material,
 					std::default_random_engine& rng, std::stack<float>& refractiveStack,
 					Vector3& sampledDir, float& pdf, Color& brdfValue);
 		Vector3 sampleGGXDirection(const Vector3& viewDir, const Vector3& normal, float roughness, std::default_random_engine& rng);
 		Vector3 sphericalDirection(float sinTheta, float cosTheta, float phi);
-		float computeGGXPDF(const Vector3& viewDir, const Vector3& sampledDir, const Vector3& normal, float roughness);
+		float computeGGXPDF(const Vector3& viewDir, const Vector3& sampledDir, const Vector3& normal, const Material& material);
 		Color evaluateBRDF(const Material& material, const Vector3& viewDir, const Vector3& lightDir, const Vector3& normal) const;
 		float fresnelDielectric(float cosThetaI, float etaI, float etaT) const;
 		void orthonormalBasis(const Vector3& normal, Vector3& tangent, Vector3& bitangent);
