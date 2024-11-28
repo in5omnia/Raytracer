@@ -20,6 +20,10 @@ class Material {
 		Image texture;  			// Pointer to texture image
 		bool hasTexture;            // Indicates whether a texture is applied
 
+		// BRDF attributes
+		float roughness = 0.5f;            // Roughness parameter
+		Color emission;             // Emission color
+	//TODO: roughness = std::clamp(roughness, 0.0f, 1.0f);
 	public:
 		// Constructor
 		Material(float ks, float kd, int specularExponent,
@@ -27,11 +31,10 @@ class Material {
 				 bool isReflective, float reflectivity,
 				 bool isRefractive, float refractiveIndex);
 
-		Material(float ks, float kd, int specularExponent,
-				 const Color& diffuseColor, const Color& specularColor,
+		Material(const Color& diffuseColor, const Color& specularColor,
 				 bool isReflective, float reflectivity,
 				 bool isRefractive, float refractiveIndex,
-				 const Image& texture);
+				 float roughness, const Color& emission);
 
 		// Default Constructor
 		Material();
@@ -50,6 +53,14 @@ class Material {
 		bool hasTextureMap() const;
 		void setTexture(Image& tex);
 		const Image& getTexture() const;
+
+		// BRDF methods
+		bool isGlossy() const;
+		float getRoughness() const;
+		void setRoughness(float roughness);
+		Color getEmission() const;
+		bool isDiffuse() const;
+		bool hasDiffuse() const;
 };
 
 

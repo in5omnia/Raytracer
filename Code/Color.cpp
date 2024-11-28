@@ -80,9 +80,22 @@ bool Color::operator==(const Color &color) const {
 
 Color Color::linearToneMap(float maxIntensity) const {
 	float scale = 1.0f / maxIntensity;  // Scale to normalize colors
-	return Color(
+	/*return Color(
 			std::min(r * scale, 1.0f),  // Clamp each channel to [0, 1]
 			std::min(g * scale, 1.0f),
 			std::min(b * scale, 1.0f)
-	);
+	);*/
+	return Color(r * scale, g * scale, b * scale);
+}
+
+
+// isZero function
+bool Color::isZero() const {
+	const float epsilon = 1e-6f;  // Small threshold to handle floating-point precision
+	return (fabs(r) < epsilon) && (fabs(g) < epsilon) && (fabs(b) < epsilon);
+}
+
+// Gamma correction function in Color class
+Color Color::gammaCorrect(float gamma) const {
+	return Color(std::pow(r, gamma), std::pow(g, gamma), std::pow(b, gamma));
 }

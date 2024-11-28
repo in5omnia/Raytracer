@@ -38,11 +38,13 @@ class Color {
 		Color operator*(const Color& color) const;	//element-wise multiplication
 		bool operator==(const Color& color) const;
 
+		Color gammaCorrect(float gamma) const;
 		Color clamp(float min, float max) const ;
+		Color linearToneMap(float maxIntensity) const;
 
+		bool isZero() const;
 		std::string toString() const;
 
-		Color linearToneMap(float maxIntensity) const;
 
 
 

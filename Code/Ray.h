@@ -15,6 +15,9 @@ class Ray {
 		//getters
 		Vector3 getOrigin() const;
 		Vector3 getDirection() const;
+
+		Vector3 calculateReflectionDir(const Vector3& normal) const;
+		Ray reflect(const Vector3& normal, const Vector3& intersectionPoint) const ;
 };
 
 

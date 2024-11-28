@@ -13,20 +13,17 @@ Material::Material(float ks, float kd, int specularExponent,
 		  isReflective(isReflective), reflectivity(reflectivity),
 		  isRefractive(isRefractive), refractiveIndex(refractiveIndex),
 		  hasTexture(false) {
-	/*Image tex = Image();
-	texture = tex;*/
 }
 
-Material::Material(float ks, float kd, int specularExponent,
-		 const Color& diffuseColor, const Color& specularColor,
-		 bool isReflective, float reflectivity,
-		 bool isRefractive, float refractiveIndex,
-		 const Image& texture)
-		: ks(ks), kd(kd), specularExponent(specularExponent),
+Material::Material(const Color& diffuseColor, const Color& specularColor,
+						bool isReflective, float reflectivity,
+						bool isRefractive, float refractiveIndex,
+						float roughness, const Color& emission)
+		: ks(0.0f), kd(0.0f), specularExponent(0.0f),
 		  diffuseColor(diffuseColor), specularColor(specularColor),
 		  isReflective(isReflective), reflectivity(reflectivity),
 		  isRefractive(isRefractive), refractiveIndex(refractiveIndex),
-		  texture(texture), hasTexture(texture.getWidth() != 0 && texture.getHeight() != 0) {}
+		  hasTexture(false), roughness((roughness > 0.0f && roughness < 1.0f) ? roughness : 1.0f), emission(emission) {}
 
 // Default Constructor
 Material::Material()
@@ -54,3 +51,31 @@ void Material::setTexture(Image& tex) {
 	hasTexture = (tex.getWidth() != 0 && tex.getHeight() != 0);
 }
 const Image& Material::getTexture() const { return texture; }
+
+// BRDF methods
+float Material::getRoughness() const {
+	return roughness;
+}
+
+void Material::setRoughness(float roughness) {
+	this->roughness = roughness;
+}
+
+Color Material::getEmission() const {
+	return emission;
+}
+
+bool Material::isGlossy() const {
+	//return roughness > 0.0f && roughness < 1.0f; // Glossy materials have roughness > 0
+	return !isReflective && !isRefractive && roughness < 1.0f && roughness > 0.0f;
+}
+
+bool Material::isDiffuse() const {
+	//return roughness == 1.0f || (!isReflective && !isGlossy()); // Fully diffuse if no glossiness or reflection
+	return !isReflective && !isRefractive && roughness >= 1.0f;
+}
+
+bool Material::hasDiffuse() const {
+	return diffuseColor.getR() > 0.0f || diffuseColor.getG() > 0.0f || diffuseColor.getB() > 0.0f;
+}
+

@@ -140,6 +140,8 @@ struct Vector3 {
 		z /= n;
 		return *this;
 	}
+
+
 	/*
 	/// Return unit length vec in the same direction
 	Vector3 unit() const {
@@ -212,6 +214,19 @@ inline std::ostream& operator<<(std::ostream& out, Vector3 v) {
 	out << "{" << v.x << "," << v.y << "," << v.z << "}";
 	return out;
 }
+
+inline void calculateTangentSpace(const Vector3& normal, Vector3& tangent, Vector3& bitangent) {
+	// Choose an arbitrary vector perpendicular to the normal
+	Vector3 arbitraryVector = (fabs(normal.x) > 0.9f) ? Vector3(0.0f, 1.0f, 0.0f) : Vector3(1.0f, 0.0f, 0.0f);
+
+	tangent = crossProduct(arbitraryVector, normal).normalize();
+	bitangent = crossProduct(normal, tangent).normalize();
+}
+
+inline Vector3 lerp(const Vector3& a, const Vector3& b, float t) {
+	return  a * (1.0f - t) + b * t;
+}
+
 
 #endif //RAYTRACER_VECTOR3_H
 

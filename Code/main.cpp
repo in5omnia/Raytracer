@@ -13,13 +13,13 @@ int main() {
 	double time;
 
 	Raytracer raytracer = Raytracer();
-	Image image = raytracer.readJSON("../jsons/scenePhongLens.json");
+	Image image = raytracer.readJSON("../jsons/scenePhongPinholeBRDF.json");
 
 	time = omp_get_wtime();
 	raytracer.render(image);
 
 	time = omp_get_wtime() - time;
 	std::cout << "Time: " << time << "s" << std::endl;
-	image.writePPM("../results/scenePhongLens.ppm");
+	image.writePPM("../results/scenePhongPinholeBRDF.ppm");
 	return 0;
 }
