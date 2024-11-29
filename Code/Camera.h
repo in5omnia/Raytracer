@@ -12,7 +12,7 @@
 class Camera {
 	private:
 		int type;
-		int width;	//image res //TODO: int or float?
+		int width;	//image res
 		int height; //image res
 		Vector3 position;
 		Vector3 lookAt;

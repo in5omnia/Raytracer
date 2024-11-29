@@ -63,13 +63,6 @@ class PointLight {
 
 		Color getIntensity(const Vector3& intersectionPoint, const Vector3& lightPosition, const Vector3& lightNormal) const;
 
-/*Light
-Attributes:
-std::string type; // e.g., "pointlight"
-Vector3 position;
-Vector3 intensity;
-Methods:
-Light-specific methods as needed.*/
 };
 
 

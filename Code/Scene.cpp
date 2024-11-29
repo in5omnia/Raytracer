@@ -1,38 +1,49 @@
 #include "Scene.h"
 
-#include <iostream>
-
-
 Scene::Scene(Color backgroundColor) : backgroundColor(backgroundColor){}
-Scene::Scene(Color backgroundColor, std::vector<Shape> shapes, std::vector<PointLight> lights)
-		: backgroundColor(backgroundColor), allShapes(shapes), pointLights(lights) {}
+
+Scene::Scene(Color backgroundColor,
+			 std::vector<Shape> shapes,
+			 std::vector<PointLight> lights)
+		: backgroundColor(backgroundColor),
+		allShapes(shapes), pointLights(lights) {}
+
 Scene::~Scene(){}
 
 void Scene::addSphere(Sphere sphere){
 	Shape shape = Shape(sphere);
 	allShapes.push_back(shape);
 }
+
 void Scene::addCylinder(Cylinder cylinder){
 	Shape shape = Shape(cylinder);
 	allShapes.push_back(shape);
 }
+
 void Scene::addTriangle(Triangle triangle){
 	Shape shape = Shape(triangle);
 	allShapes.push_back(shape);
 }
+
 void Scene::addPointLight(PointLight pointLight){
 	pointLights.push_back(pointLight);
 }
 
-std::shared_ptr<BVHNode> Scene::getBVHRoot() const { return bvhRoot; }
+std::shared_ptr<BVHNode> Scene::getBVHRoot() const {
+	return bvhRoot;
+}
 
-std::vector<Shape>& Scene::getShapes() { return allShapes; }
+std::vector<Shape>& Scene::getShapes() {
+	return allShapes;
+}
 
 Color Scene::getBackgroundColor() const{
 	return backgroundColor;
 }
 
-std::vector<PointLight> Scene::getPointLights() const { return pointLights; }
+std::vector<PointLight> Scene::getPointLights() const {
+	return pointLights;
+}
 
 void Scene::setBackgroundColor(Color color){
 	backgroundColor = color;
@@ -43,7 +54,6 @@ void Scene::setBVHRoot(std::shared_ptr<BVHNode> root){
 }
 
 void Scene::printTree(){
-	//printTree
 	std::cout << "Printing BVH Tree" << std::endl;
 	printBVHNode(bvhRoot);
 }
@@ -56,21 +66,25 @@ void Scene::printBVHNode(const std::shared_ptr<BVHNode>& node, int depth) {
 
 	// Print node information
 	const AABB& box = node->getBoundingBox();
-	std::cout << std::string(depth * 2, ' ') << "Node (Depth: " << depth << ")\n";
+	std::cout << std::string(depth * 2, ' ')
+			  << "Node (Depth: " << depth << ")\n";
 	std::cout << std::string(depth * 2, ' ') << "  Bounding Box:\n";
 	std::cout << std::string(depth * 2, ' ') << "    Min: ("
-			  << box.getMin().x << ", " << box.getMin().y << ", " << box.getMin().z << ")\n";
+			  << box.getMin().x << ", " << box.getMin().y
+			  << ", " << box.getMin().z << ")\n";
 	std::cout << std::string(depth * 2, ' ') << "    Max: ("
-			  << box.getMax().x << ", " << box.getMax().y << ", " << box.getMax().z << ")\n";
+			  << box.getMax().x << ", " << box.getMax().y << ", "
+			  << box.getMax().z << ")\n";
 
 	if (node->getIsLeaf()) {
 		const auto& shapes = node->getShapes();
-		std::cout << std::string(depth * 2, ' ') << "  Leaf Node with "
-				  << shapes.size() << " shape(s)\n";
+		std::cout << std::string(depth * 2, ' ')
+				  << "  Leaf Node with " << shapes.size()
+				  << " shape(s)\n";
 		for (const auto& shape : shapes) {
-			// Assuming Shape class has a way to identify itself
-			std::cout << std::string(depth * 2, ' ') << "    Shape: "
-					  << shape.toString() << "\n";  // Replace `toString()` with your method
+			std::cout << std::string(depth * 2, ' ')
+					  << "    Shape: "
+					  << shape.toString() << "\n";
 		}
 	} else {
 		std::cout << std::string(depth * 2, ' ') << "  Internal Node\n";
@@ -81,15 +95,20 @@ void Scene::printBVHNode(const std::shared_ptr<BVHNode>& node, int depth) {
 	}
 }
 
-Shape Scene::intersectNodeShapes(const Ray& ray, float& t, bool limitDistance, float maxDistance, const std::vector<Shape>& nodeShapes){
+Shape Scene::intersectNodeShapes(const Ray& ray, float& t,
+								 bool limitDistance, float maxDistance,
+								 const std::vector<Shape>& nodeShapes){
 	// Iterates over all shapes to find the closest intersection.
 	float tmin = INFINITY;
-	Shape lastHitObject = Shape(NO_SHAPE);	// default shape representing no intersection
+	// default shape representing no intersection
+	Shape lastHitObject = Shape(NO_SHAPE);
 
 	for (Shape shape : nodeShapes){
 		float tShape;	// distance t where the ray intersects the shape
-		// If there's an intersection and it's closer than the previous one, save the shape and distance
-		if (shape.intersect(ray, tShape) && tShape < tmin && ((limitDistance && tShape < maxDistance) || (!limitDistance))){
+		// If there's an intersection closer than the previous one,
+		// save shape and distance
+		if (shape.intersect(ray, tShape) && tShape < tmin
+			&& ((limitDistance && tShape < maxDistance) || (!limitDistance))){
 			tmin = tShape;
 			lastHitObject = shape;
 		}
@@ -98,33 +117,40 @@ Shape Scene::intersectNodeShapes(const Ray& ray, float& t, bool limitDistance, f
 	return lastHitObject;
 }
 
-bool Scene::isInShadow(const Vector3& intersectionPoint, const Vector3& lightDir,
-					   float lightDistance, const Vector3& surfaceNormal){
+bool Scene::isInShadow(const Vector3& intersectionPoint,
+					   const Vector3& lightDir,
+					   float lightDistance,
+					   const Vector3& surfaceNormal){
 	float t;
 	float offset = 0.001f;
 	// ray from intersection point (plus offset) to light source
 	Ray shadowRay(intersectionPoint + surfaceNormal * offset, lightDir);
-	return (traverseBVH(bvhRoot, shadowRay, t, true, lightDistance).getShapeType() != NO_SHAPE);
+	return (traverseBVH(bvhRoot, shadowRay, t, true, lightDistance)
+			.getShapeType() != NO_SHAPE);
 }
 
-std::shared_ptr<BVHNode> Scene::buildBVH(std::vector<Shape>& shapes, int start, int end) {
+std::shared_ptr<BVHNode> Scene::buildBVH(std::vector<Shape>& shapes,
+										 int start, int end) {
 	// Compute the bounding box surrounding all shapes in this range
 	AABB boundingBox = shapes[start].getBoundingBox();
 	for (int i = start + 1; i < end; ++i) {
-		boundingBox = AABB::surroundingBox(boundingBox, shapes[i].getBoundingBox());
+		boundingBox = AABB::surroundingBox(boundingBox,
+										   shapes[i].getBoundingBox());
 	}
 
 	int shapeCount = end - start;
 	// Leaf node: store the shapes directly
 	if (shapeCount <= 2) {
-		return std::make_unique<BVHNode>(boundingBox, std::vector<Shape>(shapes.begin() + start, shapes.begin() + end));
+		return std::make_shared<BVHNode>(boundingBox,
+	 	std::vector<Shape>(shapes.begin() + start, shapes.begin() + end));
 	}
 
 	// Choose axis to split (longest axis)
 	int axis = boundingBox.getLongestAxis();
 	std::sort(shapes.begin() + start, shapes.begin() + end,
 			  [axis](const Shape& a, const Shape& b) {
-				  return a.getBoundingBox().centroid()[axis] < b.getBoundingBox().centroid()[axis];
+				  return a.getBoundingBox().centroid()[axis]
+				  < b.getBoundingBox().centroid()[axis];
 			  });
 
 	int mid = start + shapeCount / 2;
@@ -137,26 +163,31 @@ std::shared_ptr<BVHNode> Scene::buildBVH(std::vector<Shape>& shapes, int start, 
 	return std::make_shared<BVHNode>(boundingBox, leftChild, rightChild);
 }
 
-Shape Scene::traverseBVH(const std::shared_ptr<BVHNode>& nodePtr, const Ray& ray,
-						 float& tClosest, bool limitDistance, float maxDistance) {
+Shape Scene::traverseBVH(const std::shared_ptr<BVHNode>& nodePtr,
+						 const Ray& ray, float& tClosest,
+						 bool limitDistance, float maxDistance) {
 	const BVHNode& node = *nodePtr;
 	float tMin = 0.0f, tMax = tClosest;
 
 	if (!node.getBoundingBox().intersect(ray, tMin, tMax)) {
-		return Shape(NO_SHAPE);;  // Ray misses the bounding box (no intersection)
+		// Ray misses the bounding box (no intersection)
+		return Shape(NO_SHAPE);;
 	}
 
 	// Leaf node: test intersection with all its shapes
 	if (node.getIsLeaf()) {
-		Shape hit = intersectNodeShapes(ray, tClosest, limitDistance, maxDistance, node.getShapes());
+		Shape hit = intersectNodeShapes(ray, tClosest, limitDistance,
+										maxDistance, node.getShapes());
 		return hit;
 	}
 	float tLeft = 0.0f, tRight = 0.0f;
 	// Internal node: traverse children
-	Shape hitLeft = traverseBVH(node.getLeftChild(), ray, tLeft, limitDistance, maxDistance);
-	Shape hitRight = traverseBVH(node.getRightChild(), ray, tRight, limitDistance, maxDistance);
+	Shape hitLeft = traverseBVH(node.getLeftChild(), ray, tLeft,
+								limitDistance, maxDistance);
+	Shape hitRight = traverseBVH(node.getRightChild(), ray, tRight,
+								 limitDistance, maxDistance);
 
-	// 4. Determine which child provided the closest intersection
+	// Determine which child provided the closest intersection
 	if (hitLeft.getShapeType() != NO_SHAPE) {
 		if (hitRight.getShapeType() != NO_SHAPE){
 			// Both branches have hits; choose the closer one

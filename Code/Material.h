@@ -23,9 +23,10 @@ class Material {
 		// BRDF attributes
 		float roughness = 0.5f;            // Roughness parameter
 		Color emission;             // Emission color
-	//TODO: roughness = std::clamp(roughness, 0.0f, 1.0f);
+
 	public:
-		// Constructor
+		// Constructors
+		Material();
 		Material(float ks, float kd, int specularExponent,
 				 const Color& diffuseColor, const Color& specularColor,
 				 bool isReflective, float reflectivity,
@@ -36,9 +37,9 @@ class Material {
 				 bool isRefractive, float refractiveIndex,
 				 float roughness, const Color& emission);
 
-		// Default Constructor
-		Material();
 		~Material() = default;
+
+		//getters
 		bool getIsReflective() const;
 		bool getIsRefractive() const;
 		float getKs() const;
@@ -66,18 +67,3 @@ class Material {
 
 
 #endif //RAYTRACER_MATERIAL_H
-
-
-/*
-Reflections:
-
-If the material is reflective, cast a secondary ray to compute the reflection.
-Combine this reflected color with the surface's own color.
-Refractions:
-
-For transparent materials, trace a refracted ray.
-Use Snell’s Law to calculate the bending of light.
-Global Illumination:
-
-Use path tracing to simulate indirect lighting (light bouncing off multiple surfaces).
-*/

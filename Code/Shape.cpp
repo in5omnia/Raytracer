@@ -1,22 +1,21 @@
 #include "Shape.h"
 
-#include <iostream>
-
-
 
 /* Sphere class */
 
-Sphere::Sphere(Vector3 center, float radius, const Material& material) : center(center), radius(radius), material(material) {}
+Sphere::Sphere(Vector3 center, float radius, const Material& material)
+				: center(center), radius(radius), material(material) {}
 
 
 bool Sphere::intersect(const Ray& ray, float& t) {
 
 	Vector3 L = ray.getOrigin() - center;
-	float a = dotProduct(ray.getDirection(), ray.getDirection());  // Should always be 1 if normalized
+	float a = dotProduct(ray.getDirection(), ray.getDirection());  // a = D.D
 	float b = 2.0f * dotProduct(L, ray.getDirection());
 	float c = dotProduct(L, L) - radius * radius;
 
-	float discriminant = b * b - 4 * a * c;	// Discriminant of the quadratic equation: b^2 - 4ac
+	// Discriminant of the quadratic equation: b^2 - 4ac
+	float discriminant = b * b - 4 * a * c;
 
 	// No intersection
 	if (discriminant < 0) {
@@ -28,13 +27,14 @@ bool Sphere::intersect(const Ray& ray, float& t) {
 	float t1 = (-b - sqrtDiscriminant) / (2.0f * a);
 	float t2 = (-b + sqrtDiscriminant) / (2.0f * a);
 
-	// We want the nearest positive t (after the ray's origin - camera in pinhole model)
+	// Getting nearest positive t after camera
 	if (t1 > 0) {
 		t = t1;
 	} else if (t2 > 0) {
 		t = t2;
 	} else {
-		return false;  // Both intersections are behind the ray origin
+		// Both intersections are behind the ray origin (camera)
+		return false;
 	}
 	return true;
 }
@@ -46,9 +46,12 @@ Vector3 Sphere::getNormal(const Vector3& point) {
 Material Sphere::getMaterial() const { return material; }
 
 Color Sphere::getTextureColor(const Vector3& point, const Image& texture) {
-	Vector3 normal = (point - center).normalize();  // Convert to normalized direction
-	float u = 0.5f + atan2(normal.z, normal.x) / (2.0f * M_PI);  // Azimuthal angle
-	float v = 0.5f - asin(normal.y) / M_PI;  // Polar angle
+	// Convert to normalized direction
+	Vector3 normal = (point - center).normalize();
+	// Azimuthal angle
+	float u = 0.5f + atan2(normal.z, normal.x) / (2.0f * M_PI);
+	// Polar angle
+	float v = 0.5f - asin(normal.y) / M_PI;
 
 	int texX = static_cast<int>(u * texture.getWidth()) % texture.getWidth();
 	int texY = static_cast<int>(v * texture.getHeight()) % texture.getHeight();
@@ -64,15 +67,20 @@ AABB Sphere::getBoundingBox() const {
 
 /* Cylinder class */
 
-Cylinder::Cylinder(Vector3 center, Vector3 axis, float radius, float height, const Material& material) :
-				center(center), axis(axis.normalize()), radius(radius), height(height*2.0), material(material) {}	//multiply height to match cw image
+Cylinder::Cylinder(Vector3 center, Vector3 axis, float radius,
+				   float height, const Material& material) :
+				center(center), axis(axis.normalize()), radius(radius),
+				height(height*2.0), material(material) {}
+				//multiply height by 2 to match assignment image
 
 
 bool Cylinder::intersect(const Ray& ray, float& t) {
-	Vector3 V = ray.getOrigin() - center;  // Vector from cylinder center to ray origin
+	// Vector from cylinder center to ray origin
+	Vector3 V = ray.getOrigin() - center;
 
 	// Intersect with the curved surface
-	Vector3 dPerp = ray.getDirection() - axis * dotProduct(ray.getDirection(), axis);
+	Vector3 dPerp = ray.getDirection() - axis
+			* dotProduct(ray.getDirection(), axis);
 	Vector3 vPerp = V - axis * dotProduct(V, axis);
 
 	float a = dotProduct(dPerp, dPerp);
@@ -80,7 +88,10 @@ bool Cylinder::intersect(const Ray& ray, float& t) {
 	float c = dotProduct(vPerp, vPerp) - radius * radius;
 
 	float discriminant = b * b - 4 * a * c;
-	if (discriminant < 0) return false;  // No intersection
+
+	if (discriminant < 0) // No intersection
+		return false;
+
 	float tCurved = INFINITY;
 
 	if (discriminant >= 0) {  // Curved surface intersection
@@ -101,15 +112,20 @@ bool Cylinder::intersect(const Ray& ray, float& t) {
 	}
 
 	// Intersect with the top base
-	Vector3 topCenter = center + axis * (height / 2.0f);	//center of the top base
-	float denominator = dotProduct(ray.getDirection(), axis);	//component of the ray's direction vector along the axis of the cylinder
+
+	//center of the top base
+	Vector3 topCenter = center + axis * (height / 2.0f);
+	//component of the ray's direction vector along the axis of the cylinder
+	float denominator = dotProduct(ray.getDirection(), axis);
 	float tTop = INFINITY;
 
-	//Check if the ray is parallel to the plane of the top base (when denomTop = 0) to avoid division by zero
+	//Check if ray is parallel to top base (denomTop = 0)
+	// to avoid division by zero
 	if (fabs(denominator) > 1e-6) {
 		tTop = dotProduct(topCenter - ray.getOrigin(), axis) / denominator;
 		Vector3 pTop = ray.pointAtParameter(tTop);
-		if ((pTop - topCenter).norm() > radius || tTop <= 0) {  // Point outside disk or behind ray
+		if ((pTop - topCenter).norm() > radius || tTop <= 0) {
+			// Point outside disk or behind ray
 			tTop = INFINITY;
 		}
 	}
@@ -118,9 +134,11 @@ bool Cylinder::intersect(const Ray& ray, float& t) {
 	Vector3 bottomCenter = center - axis * (height / 2.0f);
 	float tBottom = INFINITY;
 	if (fabs(denominator) > 1e-6) {  // Avoid division by zero
-		tBottom = dotProduct(bottomCenter - ray.getOrigin(), axis) / denominator;
+		tBottom = dotProduct(bottomCenter - ray.getOrigin(), axis)
+				/ denominator;
 		Vector3 pBottom = ray.pointAtParameter(tBottom);
-		if ((pBottom - bottomCenter).norm() > radius || tBottom <= 0) {  // Point outside disk or behind ray
+		if ((pBottom - bottomCenter).norm() > radius || tBottom <= 0) {
+			// Point outside disk or behind ray
 			tBottom = INFINITY;
 		}
 	}
@@ -165,8 +183,10 @@ Color Cylinder::getTextureColor(const Vector3& point, const Image& texture) {
 	float heightCoord = dotProduct(projection, axis);
 	Vector3 radial = projection - axis * heightCoord;
 
-	float u = 0.5f + atan2(radial.z, radial.x) / (2.0f * M_PI);  // Map around the circumference
-	float v = (heightCoord + height / 2.0f) / height;  // Map along the height
+	// Map around the circumference
+	float u = 0.5f + atan2(radial.z, radial.x) / (2.0f * M_PI);
+	// Map along the height
+	float v = (heightCoord + height / 2.0f) / height;
 
 	int texX = static_cast<int>(u * texture.getWidth()) % texture.getWidth();
 	int texY = static_cast<int>(v * texture.getHeight()) % texture.getHeight();
@@ -184,15 +204,17 @@ AABB Cylinder::getBoundingBox() const {
 
 /* Triangle */
 
-Triangle::Triangle(Vector3 v0, Vector3 v1, Vector3 v2, const Material& material) :
-										v0(v0), v1(v1), v2(v2), material(material) {}
+Triangle::Triangle(Vector3 v0, Vector3 v1, Vector3 v2,
+				   const Material& material) :
+				   v0(v0), v1(v1), v2(v2), material(material) {}
 
 
-Vector3 Triangle::getNormal(const Vector3& rayDir) {	//Note that here point is the direction of the ray
+Vector3 Triangle::getNormal(const Vector3& rayDir) {
 	Vector3 E1 = v1 - v0;  // Edge 1: from v0 to v1
 	Vector3 E2 = v2 - v0;  // Edge 2: from v0 to v2
 	Vector3 normal = crossProduct(E1, E2).normalize();
-	if (dotProduct(normal, rayDir) > 0) {	//ensure normal is pointing towards the ray origin (camera)
+	//ensure normal is pointing towards the ray origin (camera)
+	if (dotProduct(normal, rayDir) > 0) {
 		return normal * -1.0f;
 	}
 	return normal;
@@ -237,11 +259,14 @@ Color Triangle::getTextureColor(const Vector3& point, const Image& texture) {
 	float u = crossProduct(P, E2).norm() / area;
 	float v = crossProduct(E1, P).norm() / area;
 
-	float texU = (1 - u - v) * 0.0f + u * 1.0f + v * 0.5f;  // Example texture coords
+	// Texture coordinates
+	float texU = (1 - u - v) * 0.0f + u * 1.0f + v * 0.5f;
 	float texV = (1 - u - v) * 0.0f + u * 0.0f + v * 1.0f;
 
-	int texX = static_cast<int>(texU * texture.getWidth()) % texture.getWidth();
-	int texY = static_cast<int>(texV * texture.getHeight()) % texture.getHeight();
+	int texX = static_cast<int>(texU * texture.getWidth())
+			% texture.getWidth();
+	int texY = static_cast<int>(texV * texture.getHeight())
+			% texture.getHeight();
 	return texture.getPixelColor(texX, texY);
 }
 
@@ -331,14 +356,6 @@ std::string Shape::toString() const {
 	} else { // Invalid shape
 		std::cerr << "Invalid shape type!" << std::endl;
 		return "Invalid shape";
-	}
-}
-Vector3 Shape::getV0(){
-	if (shapeType == TRIANGLE) {
-		return triangle.getV0();
-	} else {
-		std::cerr << "Invalid shape type!" << std::endl;
-		return Vector3();
 	}
 }
 

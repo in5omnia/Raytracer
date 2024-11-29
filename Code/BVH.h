@@ -33,15 +33,18 @@ class AABB {
 
 class BVHNode {
 	private:
-		AABB boundingBox;                         // The bounding volume of this node
-		std::shared_ptr<BVHNode> leftChild = nullptr;       // Pointer to the left child node
-		std::shared_ptr<BVHNode> rightChild = nullptr;      // Pointer to the right child node
-		std::vector<Shape> shapes;                // Shapes in this node if it's a leaf
-		bool isLeaf = false;                 // Indicates if this is a leaf node
+
+		AABB boundingBox;	// The bounding volume of this node
+		std::shared_ptr<BVHNode> leftChild = nullptr;
+		std::shared_ptr<BVHNode> rightChild = nullptr;
+		std::vector<Shape> shapes;	// Shapes in this node if it's a leaf
+		bool isLeaf = false;
 	public:
 		BVHNode() = default;
 		// Constructor for internal nodes
-		BVHNode(const AABB& box, std::shared_ptr<BVHNode> _leftChild, std::shared_ptr<BVHNode> _rightChild);
+		BVHNode(const AABB& box,
+				std::shared_ptr<BVHNode> _leftChild,
+				std::shared_ptr<BVHNode> _rightChild);
 
 		// Constructor for leaf nodes
 		BVHNode(const AABB& box, const std::vector<Shape>& shapes);

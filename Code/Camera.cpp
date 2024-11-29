@@ -4,12 +4,12 @@
 /* Camera */
 
 Camera::Camera(int type, int width, int height,
-							 Vector3 position, Vector3 lookAt, Vector3 upVector,
-							 float fov, float exposure,
-							 float apertureRadius, float focalDistance) :
-							 type(type), width(width), height(height),
-							 position(position), lookAt(lookAt), upVector(upVector),
-							 fov(fov), exposure(exposure) {
+			   Vector3 position, Vector3 lookAt, Vector3 upVector,
+			   float fov, float exposure,
+			   float apertureRadius, float focalDistance) :
+			   type(type), width(width), height(height),
+			   position(position), lookAt(lookAt), upVector(upVector),
+			   fov(fov), exposure(exposure) {
 	if (type == LENS) {
 		this->apertureRadius = apertureRadius;
 		this->focalDistance = focalDistance;
@@ -20,14 +20,11 @@ Camera::Camera(int type, int width, int height,
 	//compute camera's basis vectors
 	calculateForwardVector();
 	calculateRightVector();
-	setUpVector(crossProduct(rightVector, forwardVector));	//TODO: check if it makes a difference
+	setUpVector(crossProduct(rightVector, forwardVector));
 }
 
 
 //methods
-/**
- * Generates a ray for given normalized screen coordinates.
-*/
 Ray Camera::generateRayPinhole(float u, float v) const {
 
 	// Compute image plane dimensions
@@ -41,10 +38,12 @@ Ray Camera::generateRayPinhole(float u, float v) const {
 	Vector3 vertical = upVector * viewportHeight;
 
 	// Compute lower-left corner of the image plane
-	Vector3 lowerLeftCorner = position + forwardVector - (horizontal * 0.5f) - (vertical * 0.5f);
+	Vector3 lowerLeftCorner = position + forwardVector
+			- (horizontal * 0.5f) - (vertical * 0.5f);
 
 	// Compute the ray direction
-	Vector3 rayDirection = (lowerLeftCorner + horizontal * u + vertical * v) - position;
+	Vector3 rayDirection = (lowerLeftCorner
+			+ horizontal * u + vertical * v) - position;
 	rayDirection = rayDirection.normalize();
 
 	// Return the ray starting from the camera position
@@ -53,12 +52,18 @@ Ray Camera::generateRayPinhole(float u, float v) const {
 
 Ray Camera::generateRayLens(Ray pinholeRay) const {
 	// Calculate the point on the focal plane
-	Vector3 focalPoint = pinholeRay.getOrigin() + pinholeRay.getDirection() * focalDistance;
+	Vector3 focalPoint = pinholeRay.getOrigin() +
+			pinholeRay.getDirection() * focalDistance;
 
 	// Sample a random point on the aperture disk
-	float r = apertureRadius * sqrt(static_cast<float>(rand()) / static_cast<float>(RAND_MAX));
-	float theta = 2.0f * M_PI * static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-	Vector3 apertureSamplePoint = position + rightVector * (r * cos(theta)) + upVector * (r * sin(theta));
+	float r = apertureRadius * sqrt(static_cast<float>(rand())
+			/ static_cast<float>(RAND_MAX));
+
+	float theta = 2.0f * M_PI * static_cast<float>(rand())
+			/ static_cast<float>(RAND_MAX);
+
+	Vector3 apertureSamplePoint = position + rightVector * (r * cos(theta))
+			+ upVector * (r * sin(theta));
 
 	// Create a new ray from the aperture sample to the focal point
 	Vector3 apertureSampleDir = (focalPoint - apertureSamplePoint).normalize();
@@ -96,7 +101,7 @@ void Camera::calculateForwardVector() {
 	this->forwardVector = (lookAt - position).normalize();
 }
 
-void Camera::calculateRightVector() {	// must be called after calculateForwardVector!!
+void Camera::calculateRightVector() {
 	this->rightVector = crossProduct(forwardVector, upVector).normalize();
 }
 

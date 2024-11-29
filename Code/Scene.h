@@ -7,8 +7,8 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
-#include <iomanip>  // For formatted output (printTree) TODO: remove debug
-#include <iostream>// For printTree TODO: remove debug
+#include <iomanip>
+#include <iostream>
 
 
 class Scene {
@@ -21,17 +21,22 @@ class Scene {
 	public:
 		Scene() = default;
 		Scene(Color backgroundColor);
-		Scene(Color backgroundColor, std::vector<Shape> shapes, std::vector<PointLight> pointLights);
+		Scene(Color backgroundColor, std::vector<Shape> shapes,
+			  std::vector<PointLight> pointLights);
 		~Scene();
 
 		//methods
-		Shape intersectNodeShapes(const Ray& ray, float& t, bool limitDistance,
-								  float maxDistance, const std::vector<Shape>& nodeShapes);
-		bool isInShadow(const Vector3& intersectionPoint, const Vector3& lightDir,
-						float lightDistance, const Vector3& surfaceNormal);
-		std::shared_ptr<BVHNode> buildBVH(std::vector<Shape>& shapes, int start, int end);
+		Shape intersectNodeShapes(const Ray& ray, float& t,
+								  bool limitDistance, float maxDistance,
+								  const std::vector<Shape>& nodeShapes);
+		bool isInShadow(const Vector3& intersectionPoint,
+						const Vector3& lightDir, float lightDistance,
+						const Vector3& surfaceNormal);
+		std::shared_ptr<BVHNode> buildBVH(std::vector<Shape>& shapes,
+										  int start, int end);
 		Shape traverseBVH(const std::shared_ptr<BVHNode>& nodePtr,
-						  const Ray& ray, float& tClosest, bool limitDistance, float maxDistance);
+						  const Ray& ray, float& tClosest,
+						  bool limitDistance, float maxDistance);
 
 		//setters and adders
 		void setBackgroundColor(Color color);
@@ -47,7 +52,7 @@ class Scene {
 		std::vector<Shape>& getShapes();  // Return a reference
 		std::shared_ptr<BVHNode> getBVHRoot() const;
 
-		//debug helpers
+		//methods for debugging
 		void printTree();
 		void printBVHNode(const std::shared_ptr<BVHNode>& node, int depth = 0);
 };

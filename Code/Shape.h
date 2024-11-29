@@ -75,7 +75,6 @@ class Triangle {
 		Color getTextureColor(const Vector3& point, const Image& texture);
 		AABB getBoundingBox() const;
 		std::string toString() const { return "Triangle"; }
-		Vector3 getV0() { return v0; }	//DEBUG TODO: remove
 };
 
 
@@ -86,7 +85,7 @@ class Shape {
 		Cylinder cylinder;
 		Triangle triangle;
 	public:
-		Shape(int shapeType);	//no shape constructor
+		Shape(int shapeType);	//NO_SHAPE constructor
 		Shape(Sphere sphere);
 		Shape(Cylinder cylinder);
 		Shape(Triangle triangle);
@@ -99,7 +98,6 @@ class Shape {
 		std::string toString() const;
 		AABB getBoundingBox() const;
 		int getShapeType() const;
-		Vector3 getV0();
 };
 
 #endif //RAYTRACER_SHAPE_H

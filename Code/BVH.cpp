@@ -66,8 +66,11 @@ Vector3 AABB::getMax() const {
 /* BVHNode class methods */
 
 // Constructor for internal nodes
-BVHNode::BVHNode(const AABB& box, std::shared_ptr<BVHNode> _leftChild, std::shared_ptr<BVHNode> _rightChild)
-		: boundingBox(box), leftChild(_leftChild), rightChild(_rightChild), isLeaf(false) {}
+BVHNode::BVHNode(const AABB& box,
+				 std::shared_ptr<BVHNode> _leftChild,
+				 std::shared_ptr<BVHNode> _rightChild)
+		: boundingBox(box), leftChild(_leftChild),
+		rightChild(_rightChild), isLeaf(false) {}
 
 // Constructor for leaf nodes
 BVHNode::BVHNode(const AABB& box, const std::vector<Shape>& shapes)
