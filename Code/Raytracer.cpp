@@ -155,6 +155,7 @@ void Raytracer::renderWithApertureSampling(Image& image) {
 }
 
 
+// Trace Rays for Binary and Phong rendermodes
 Color Raytracer::traceRay(const Ray& ray, int depth,
 						  std::stack<float> refractiveStack) {
 	// Base case: Limit the number of bounces
@@ -561,7 +562,7 @@ void Raytracer::renderBRDFWithoutApertureSampling(Image& image) {
 
 				// Trace the ray using BRDF path tracing
 				std::stack<float> refractiveStack;
-				Color pixelSampleColor = traceRayBRDFBia(pinholeRay, 0,
+				Color pixelSampleColor = traceRayBRDF(pinholeRay, 0,
 														 refractiveStack, rng);
 
 				// Accumulate pixel samples
@@ -682,427 +683,6 @@ void Raytracer::renderBRDFWithApertureSampling(Image& image) {
 	}
 }
 
-/*
-Color Raytracer::traceRayBRDF(const Ray& ray, int depth,
-								std::stack<float>& refractiveStack,
-								std::default_random_engine& rng) {
-	if (depth > nbounces) {
- 		// Return black if max depth is exceeded
-		return Color(0.0f, 0.0f, 0.0f);
-	}
-
-	// Intersect the scene
-	auto bvhRoot = scene.getBVHRoot();
-	float t;  // Distance to the closest intersection
-	Shape hitObject = scene.traverseBVH(bvhRoot, ray, t, false, 0.0f);
-
-	if (hitObject.getShapeType() == NO_SHAPE) {
-		// No intersection
-		return scene.getBackgroundColor();
-	}
-
-	// Intersection detected
-	Vector3 intersectionPoint = ray.pointAtParameter(t);
-	Vector3 normal = hitObject.getNormal(intersectionPoint).normalize();
-
-	Material material = hitObject.getMaterial();
-	Color emittedRadiance = material.getEmission();
-
- 	// From camera to intersection
-	Vector3 incidentDir = ray.getDirection().normalize();
-	// Ensure the normal is facing the correct direction
-	if (dotProduct(normal, incidentDir) > 0.0f) {
-		normal = -normal;
-	}
-
-	// Russian Roulette termination
-	float rrProbability = 0.9f;  // Adjust as needed
-	if (depth > 5) {
-		std::uniform_real_distribution<float> rrDist(0.0f, 1.0f);
-		if (rrDist(rng) > rrProbability) {
-			return emittedRadiance;
-		}
-	} else {
-		rrProbability = 1.0f;
-	}
-
-	Color incomingRadiance(0.0f, 0.0f, 0.0f);
-	Color directLighting(0.0f, 0.0f, 0.0f);
-
-	// ** Direct Lighting Calculation with Shadows **
-	directLighting = computeDirectLighting(intersectionPoint, normal,
- 											-incidentDir, material, rng);
-
-	// ** Material Handling **
-	if (material.getIsReflective() || material.getIsRefractive()) {
-		// ** Fresnel Factor Calculation **
-		// Cosine of incident angle
-		float cosThetaI = fabs(dotProduct(normal, -incidentDir));
-
- 		// Refractive index of incident medium
-		float etaI = refractiveStack.empty() ? 1.0f : refractiveStack.top();
-		float etaT = material.getRefractiveIndex();
-
-
-		//if (!material.getIsRefractive()) {
-		//	etaT = 1.5f;  // Example value, adjust based on material TODO:remove
-		//}
-
-		float reflectance = fresnelDielectric(cosThetaI, etaI, etaT);
-
-		// ** Importance Sampling between Reflection and Refraction **
-		std::uniform_real_distribution<float> dist(0.0f, 1.0f);
-		float randomSample = dist(rng);
-
-		if (randomSample < reflectance) {
-			// ** Reflection **
-			Vector3 reflectedDir = reflect(incidentDir, normal).normalize();
-
-			// Microfacet BRDF sampling for reflection
-			Color brdf = microfacetBRDF(incidentDir, reflectedDir,
-										normal, material);
-			float pdf = microfacetPDF(incidentDir, reflectedDir,
-										normal, material);
-
-			if (pdf > 0.0f) {
-				Ray reflectedRay(intersectionPoint + normal * 1e-4f,
-									reflectedDir);
-				Color incoming = traceRayBRDF(reflectedRay, depth + 1,
-												refractiveStack, rng);
-
-				incomingRadiance += incoming * brdf *
-									fabs(dotProduct(normal, reflectedDir))
-									/ pdf;
-			}
-		} else if (material.getIsRefractive()) {
-			// ** Refraction **
-			bool entering = dotProduct(normal, -incidentDir) > 0.0f;
-
-			float n1 = refractiveStack.empty() ? 1.0f : refractiveStack.top();
-			float n2 = entering ? material.getRefractiveIndex() :
-						(refractiveStack.size() > 1 ?
-						refractiveStack.top() : 1.0f);
-
-			float eta = n1 / n2;
-			Vector3 refractedDir;
-
-			if (refract(incidentDir, normal, eta, refractedDir)) {
-				refractedDir = refractedDir.normalize();
-
-				Ray refractedRay(intersectionPoint - normal * 1e-4f,
-								refractedDir);
-
-				// Update refractive stack
-				if (entering) {
-					refractiveStack.push(material.getRefractiveIndex());
-				} else if (!refractiveStack.empty()) {
-					refractiveStack.pop();
-				}
-
-				Color incoming = traceRayBRDF(refractedRay, depth + 1,
-												refractiveStack, rng);
-				// Assuming no absorption, adjust if material absorbs light
-				incomingRadiance += incoming;
-			} else {
-				// Total internal reflection
-				Vector3 reflectedDir = reflect(incidentDir, normal)
-										.normalize();
-				Ray reflectedRay(intersectionPoint + normal * 1e-4f,
-								reflectedDir);
-				Color incoming = traceRayBRDF(reflectedRay, depth + 1,
-												refractiveStack, rng);
-
-				incomingRadiance += incoming;
-			}
-		} else {
-			// For purely reflective materials without refraction
-			Vector3 reflectedDir = reflect(incidentDir, normal).normalize();
-
-			// Microfacet BRDF sampling for reflection
-			Color brdf = microfacetBRDF(incidentDir, reflectedDir,
-										normal, material);
-			float pdf = microfacetPDF(incidentDir, reflectedDir,
-										normal, material);
-
-			if (pdf > 0.0f) {
-				Ray reflectedRay(intersectionPoint + normal * 1e-4f,
-									reflectedDir);
-				Color incoming = traceRayBRDF(reflectedRay, depth + 1,
-												refractiveStack, rng);
-
-				incomingRadiance += incoming * brdf *
-									fabs(dotProduct(normal, reflectedDir))
-									/ pdf;
-			}
-		}
-	} else {
-		// ** Diffuse Material (Lambertian) **
-		// Cosine-weighted hemisphere sampling (importance sampling)
-		Vector3 sampledDir = cosineSampleHemisphere(normal, rng);
-
-		// Compute BRDF and PDF
-		float pdf = fabs(dotProduct(normal, sampledDir)) / M_PI;
-		Color brdf = material.getDiffuseColor() / M_PI;
-
-		// Create new ray
-		Ray newRay(intersectionPoint + normal * 1e-4f, sampledDir);
-
-		// Recursive trace
-		Color incoming = traceRayBRDF(newRay, depth + 1, refractiveStack, rng);
-
-		// Compute contribution
-		incomingRadiance = incoming * brdf *
-							fabs(dotProduct(normal, sampledDir))
-							/ pdf;
-	}
-
-	// Apply Russian Roulette probability
-	incomingRadiance = incomingRadiance / rrProbability;
-
-	// Total radiance is emitted radiance plus direct and indirect lighting
-	return emittedRadiance + directLighting + incomingRadiance;
-}
-
-// Utility Functions
-void Raytracer::sampleBRDF(const Vector3& viewDir, const Vector3& normal,
- 							const Material& material,
-						   std::default_random_engine& rng,
-						   Vector3& sampledDir, float& pdf,
-						   Color& brdfValue) {
-	if (material.isDiffuse()) {
-		// Cosine-weighted hemisphere sampling
-		sampledDir = cosineSampleHemisphere(normal, rng);
-		pdf = fabs(dotProduct(normal, sampledDir)) / M_PI;
-		brdfValue = material.getDiffuseColor() / M_PI;
-	} else if (material.getIsReflective()) {
-		// Importance sampling for specular reflection
-		sampledDir = sampleGGXDistribution(viewDir, normal,
-											material.getRoughness(), rng);
-		pdf = computeSpecularPDF(viewDir, sampledDir,
-								normal, material.getRoughness());
-		brdfValue = evaluateBRDF(material, viewDir, sampledDir, normal);
-	}
-	// Handle other material types as needed
-}
-
-Vector3 Raytracer::sampleGGXDistribution(const Vector3& viewDir,
- 										const Vector3& normal,
- 										float roughness,
- 										std::default_random_engine& rng) {
-	// Generate random numbers
-	std::uniform_real_distribution<float> dist(0.0f, 1.0f);
-	float r1 = dist(rng);
-	float r2 = dist(rng);
-
-	// Sample microfacet normal (half-vector)
-	float alpha = roughness * roughness;
-	float phi = 2.0f * M_PI * r1;
-
-	float cosTheta = sqrt((1.0f - r2) /
- 					(1.0f + (alpha * alpha - 1.0f) * r2 + 1e-7f));
-	float sinTheta = sqrt(1.0f - cosTheta * cosTheta);
-
-	float x = sinTheta * cos(phi);
-	float y = sinTheta * sin(phi);
-	float z = cosTheta;
-
-	// Convert to world space
-	Vector3 h;
-	// Build an orthonormal basis around the normal
-	Vector3 w = normal;
-	Vector3 u = crossProduct(fabs(w.x) > 0.1f ? Vector3(0,1,0)
- 				: Vector3(1,0,0), w).normalize();
-	Vector3 v = crossProduct(w, u);
-
-	h = u * x + v * y + w * z;
-	h = h.normalize();
-
-	// Compute the reflected direction
-	Vector3 sampledDir = reflect(-viewDir, h);
-	return sampledDir.normalize();
-}
-
-float Raytracer::computeSpecularPDF(const Vector3& viewDir,
- 									const Vector3& sampledDir,
- 									const Vector3& normal,
- 									float roughness) {
-	Vector3 halfVector = (viewDir + sampledDir).normalize();
-	float NdotH = std::max(0.0f, dotProduct(normal, halfVector));
-	float VdotH = std::max(0.0f, dotProduct(viewDir, halfVector));
-
-	float D = distributionGGX(NdotH, roughness);
-	float pdf = D * NdotH / (4.0f * VdotH + 1e-7f);
-
-	return pdf;
-}
-
-
-Color Raytracer::computeDirectLighting(const Vector3& intersectionPoint,
- 										const Vector3& normal,
- 										const Vector3& viewDir,
- 										const Material& material,
- 										std::default_random_engine& rng) {
-	Color directLight(0.0f, 0.0f, 0.0f);
-
-	// Loop over all light sources
-	for (const PointLight& light : scene.getPointLights()) {
-		Vector3 lightPos = light.getPosition();
-		Vector3 lightDir = (lightPos - intersectionPoint).normalize();
-		float lightDist = (lightPos - intersectionPoint).norm();
-		float distanceSquared = lightDist * lightDist;
-
-
-		if (scene.isInShadow(intersectionPoint, lightDir, lightDist, normal)) {
-			continue;  // Light is blocked, so skip this light
-		}
-
-		// Compute attenuation (if any)
-		float attenuation = 1.0f;
-
-		// Compute BRDF value
-		float NdotL = std::max(0.0f, dotProduct(normal, lightDir));
-		if (NdotL > 0.0f) {
-			Color brdfValue = evaluateBRDF(material, -viewDir,
-											lightDir, normal);
-
-			// Light intensity
-			Color lightIntensity = light.getIntensity() * attenuation
-									/ (distanceSquared + 1e-7);
-
-			// Accumulate the contribution
-			directLight += brdfValue * lightIntensity * NdotL;
-		}
-	}
-
-	return directLight;
-}
-
-
-Color Raytracer::evaluateBRDF(Material material,
- 								const Vector3& viewDir,
- 								const Vector3& lightDir,
- 								const Vector3& normal) const {
-	if (material.isDiffuse()) {
-		// Diffuse (Lambertian) BRDF
-		return material.getDiffuseColor() / M_PI;
-	}
-
-	Color brdfValue(0.0f, 0.0f, 0.0f);
-	if (material.hasDiffuse()){
-		// Diffuse (Lambertian) BRDF
-		brdfValue += material.getDiffuseColor() / M_PI;
-	}
-	if (material.isGlossy() || material.getIsReflective()) {
-		// Specular BRDF using microfacet model
-		// Compute half-vector
-		Vector3 halfVector = (viewDir + lightDir).normalize();
-		float NdotH = std::max(0.0f, dotProduct(normal, halfVector));
-		float NdotV = std::max(0.0f, dotProduct(normal, viewDir));
-		float NdotL = std::max(0.0f, dotProduct(normal, lightDir));
-		float VdotH = std::max(0.0f, dotProduct(viewDir, halfVector));
-
-		float roughness = material.getRoughness();
-
-		// Fresnel term
-		float F = fresnelDielectric(VdotH, 1.0f,
-									material.getRefractiveIndex());
-
-		// Geometry term
-		float G = geometrySmith(NdotV, NdotL, roughness);
-
-		// Normal Distribution Function (NDF)
-		float D = distributionGGX(NdotH, roughness);
-
-		// Specular BRDF
-		float denom = 4.0f * NdotV * NdotL + 1e-7f;
-		Color specular = material.getSpecularColor() * (F * G * D / denom);
-
-		brdfValue += specular;
-	}
-	return brdfValue;
-}
-
-
-// Fresnel reflectance for dielectric materials using Schlick's approximation
-float Raytracer::fresnelDielectric(float cosThetaI,
- 									float etaI, float etaT) const {
-	float r0 = pow((etaI - etaT) / (etaI + etaT), 2.0f);
-	return r0 + (1.0f - r0) * pow(1.0f - cosThetaI, 5.0f);
-}
-
-// Cosine-weighted hemisphere sampling
-Vector3 Raytracer::cosineSampleHemisphere(const Vector3& normal,
- 											std::default_random_engine& rng) {
-	std::uniform_real_distribution<float> dist(0.0f, 1.0f);
-	float r1 = dist(rng);
-	float r2 = dist(rng);
-
-	float phi = 2.0f * M_PI * r1;
-	float x = cos(phi) * sqrt(r2);
-	float y = sin(phi) * sqrt(r2);
-	float z = sqrt(1.0f - r2);
-
-	// Create an orthonormal basis
-	Vector3 w = normal;
-	Vector3 u = crossProduct(fabs(w.x) > 0.1f ? Vector3(0,1,0) :
- 								Vector3(1,0,0), w).normalize();
-	Vector3 v = crossProduct(w, u);
-
-	Vector3 sampleDir = u * x + v * y + w * z;
-	return sampleDir.normalize();
-}
-
-// Microfacet BRDF using Cook-Torrance model with GGX distribution
-Color Raytracer::microfacetBRDF(const Vector3& incident,
- 								const Vector3& reflected,
- 								const Vector3& normal,
- 								const Material& material) {
-	Vector3 halfVector = (incident + reflected).normalize();
-	float NdotH = std::max(0.0f, dotProduct(normal, halfVector));
-	float NdotV = std::max(0.0f, dotProduct(normal, -incident));
-	float NdotL = std::max(0.0f, dotProduct(normal, reflected));
-	float VdotH = std::max(0.0f, dotProduct(-incident, halfVector));
-
-	// Fresnel term
-	float F = fresnelDielectric(VdotH, 1.0f, material.getRefractiveIndex());
-
-	// Geometry term
-	float G = geometrySmith(NdotV, NdotL, material.getRoughness());
-
-	// Normal Distribution Function (NDF)
-	float D = distributionGGX(NdotH, material.getRoughness());
-
-	// Specular BRDF
-	float denom = 4.0f * NdotV * NdotL + 1e-7f;
-	Color specular = material.getSpecularColor() * (F * G * D / denom);
-
-	return specular;
-}
-
-// GGX Normal Distribution Function
-float Raytracer::distributionGGX(float NdotH, float roughness) const {
-	float alpha = roughness * roughness;
-	float alpha2 = alpha * alpha;
-	float denom = (NdotH * NdotH) * (alpha2 - 1.0f) + 1.0f;
-	return alpha2 / (M_PI * denom * denom + 1e-7f);
-}
-
-// Geometry term using Smith's method
-float Raytracer::geometrySmith(float NdotV, float NdotL,
- 								float roughness) const {
-	float ggx1 = geometrySchlickGGX(NdotV, roughness);
-	float ggx2 = geometrySchlickGGX(NdotL, roughness);
-	return ggx1 * ggx2;
-}
-
-// Geometry function for one direction
-float Raytracer::geometrySchlickGGX(float NdotV, float roughness) const {
-	float r = roughness + 1.0f;
-	float k = (r * r) / 8.0f;
-	float denom = NdotV * (1.0f - k) + k;
-	return NdotV / denom;
-}*/
-
 // PDF for microfacet BRDF sampling
 float Raytracer::microfacetPDF(const Vector3& viewDir,
 							   const Vector3& reflected,
@@ -1116,8 +696,6 @@ float Raytracer::microfacetPDF(const Vector3& viewDir,
 	float pdf = D * NdotH / (4.0f * HdotL + 1e-7f);
 	return pdf;
 }
-
-
 
 
 // Reflects the incident direction about the normal
@@ -1142,163 +720,6 @@ bool Raytracer::refract(const Vector3& incident, const Vector3& normal,
 	return true;
 }
 
-//NEW VERSION
-
-
-Color Raytracer::traceRayBRDF(const Ray& ray, int depth,
-							  std::stack<float>& refractiveStack,
-							  std::default_random_engine& rng) {
-	if (depth > nbounces) {
-		return Color(0.0f, 0.0f, 0.0f);  // Terminate recursion
-	}
-
-	// Intersect the scene
-	auto bvhRoot = scene.getBVHRoot();
-	float t;  // Distance to the closest intersection
-	Shape hitObject = scene.traverseBVH(bvhRoot, ray, t, false, 0.0f);
-
-	if (hitObject.getShapeType() == NO_SHAPE) {
-		// No intersection
-		return scene.getBackgroundColor();
-	}
-
-	// Intersection detected
-	Vector3 intersectionPoint = ray.pointAtParameter(t);
-	Vector3 normal = hitObject.getNormal(intersectionPoint).normalize();
-
-	Material material = hitObject.getMaterial();
-	Color emittedRadiance = material.getEmission();
-
-	// From camera to intersection
-	Vector3 incidentDir = ray.getDirection().normalize();
-	// Ensure the normal is facing the correct direction
-	if (dotProduct(normal, incidentDir) > 0.0f) {
-		normal = -normal;
-	}
-
-	// Russian Roulette termination
-	float rrProbability = 1.0f;
-	if (depth > 5) {
-		rrProbability = 0.9f;  // Adjust as needed
-		std::uniform_real_distribution<float> rrDist(0.0f, 1.0f);
-		if (rrDist(rng) > rrProbability) {
-			return emittedRadiance;
-		}
-	}
-
-	Color incomingRadiance(0.0f, 0.0f, 0.0f);
-
-	// ** Direct Lighting Calculation with Shadows **
-	Color directLighting = computeDirectLighting(intersectionPoint, normal,
-												 -incidentDir, material, rng);
-
-	if (material.isPerfectMirror()) {
-		// ** Perfect Mirror Reflection **
-		// Skip Monte Carlo integration and reflect exact ray
-
-		// For purely reflective materials without refraction
-		Vector3 reflectedDir = reflect(incidentDir, normal).normalize();
-		Ray reflectedRay(intersectionPoint + normal * 1e-4f, reflectedDir);
-
-		Color incoming = traceRayBRDF(reflectedRay, depth + 1,
-									  refractiveStack, rng);
-		return emittedRadiance + directLighting + incoming / rrProbability;
-	}
-	// ** Monte Carlo Integration **
-	for (int i = 0; i < numBRDFSamples; ++i) {
-		Vector3 sampledDir;
-		float pdf;
-		Color brdfValue;
-
-		// Sample a direction based on the BRDF
-		sampleBRDF(-incidentDir, normal, material, rng, refractiveStack,
-				   sampledDir, pdf, brdfValue);
-
-		if (pdf > 0.0f && !brdfValue.isZero()) {
-			// Create new ray
-			Vector3 offsetPoint = intersectionPoint + sampledDir * 1e-4f;
-			Ray sampleRay(offsetPoint, sampledDir);
-
-			// Update refractive index stack if necessary
-			std::stack<float> refractiveStackCopy = refractiveStack;
-			if (material.getIsRefractive()) {
-				bool entering = dotProduct(normal, sampledDir) < 0.0f;
-				if (entering) {
-					refractiveStackCopy.push(material.getRefractiveIndex());
-				} else if (!refractiveStackCopy.empty()) {
-					refractiveStackCopy.pop();
-				}
-			}
-
-			// Recursive trace
-			Color incoming = traceRayBRDF(sampleRay, depth + 1,
-										  refractiveStackCopy, rng);
-
-			// Compute contribution
-			float cosTheta = std::abs(dotProduct(normal, sampledDir));
-			incomingRadiance += incoming * brdfValue * cosTheta / pdf;
-		}
-
-	}
-
-	// Average the accumulated radiance
-	incomingRadiance = incomingRadiance / static_cast<float>(numBRDFSamples);
-
-	// Apply Russian Roulette probability
-	incomingRadiance = incomingRadiance / rrProbability;
-
-	// Total radiance is emitted radiance plus direct and indirect lighting
-	return emittedRadiance + directLighting + incomingRadiance;
-}
-
-void Raytracer::sampleBRDF(const Vector3& viewDir, const Vector3& normal,
-						   const Material& material,
-						   std::default_random_engine& rng,
-						   std::stack<float>& refractiveStack,
-						   Vector3& sampledDir, float& pdf,
-						   Color& brdfValue) {
-	if (material.isDiffuse()) {
-		// ** Diffuse Material Sampling **
-		sampledDir = cosineSampleHemisphere(normal, rng);
-		pdf = std::abs(dotProduct(normal, sampledDir)) / M_PI;
-		brdfValue = material.getDiffuseColor() / M_PI;
-
-	} else if (material.isGlossy() || material.getIsReflective()) {
-		// ** Glossy or Reflective Material Sampling **
-		sampledDir = sampleGGXDirection(viewDir, normal,
-										material.getRoughness(), rng);
-		pdf = computeGGXPDF(viewDir, sampledDir, normal, material);
-		brdfValue = evaluateBRDF(material, viewDir, sampledDir, normal);
-
-	} else if (material.getIsRefractive()) {
-		// ** Refractive Material Sampling **
-		bool entering = dotProduct(normal, /*-*/viewDir) > 0.0f;	//why -viewDir? TODO:check
-		float n1 = refractiveStack.empty() ? 1.0f : refractiveStack.top();
-		float n2 = entering ? material.getRefractiveIndex() :
-				(refractiveStack.size() > 1 ? refractiveStack.top() : 1.0f);
-		//float eta = entering ? (n1 / n2) : (n2 / n1);
-		float eta = n1 / n2;
-		Vector3 refractedDir;
-		if (refract(-viewDir, normal, eta, refractedDir)) {
-			sampledDir = refractedDir.normalize();
-			pdf = 1.0f;  // Delta distribution
-			// Assuming perfect transmission
-			brdfValue = Color(1.0f, 1.0f, 1.0f);
-		} else {
-			// ** Total Internal Reflection **
-			sampledDir = reflect(-viewDir, normal).normalize();
-			pdf = 1.0f;  // Delta distribution
-			// Reflectance is usually white
-			brdfValue = Color(1.0f, 1.0f, 1.0f);
-		}
-
-	} else {
-		// ** Default Case **
-		sampledDir = Vector3(0.0f, 0.0f, 0.0f);
-		pdf = 1.0f;
-		brdfValue = Color(0.0f, 0.0f, 0.0f);
-	}
-}
 
 Vector3 Raytracer::sampleGGXDirection(const Vector3& viewDir,
 									  const Vector3& normal,
@@ -1341,14 +762,6 @@ float Raytracer::computeGGXPDF(const Vector3& viewDir,
 							   const Vector3& normal,
 							   const Material& material) {
 	Vector3 incidentDir = -viewDir;
-	/*Vector3 halfVector = (sampledDir - incidentDir).normalize();
-	float NdotH = std::max(0.0f, dotProduct(normal, halfVector));
-	float VdotH = std::max(0.0f, dotProduct(viewDir, halfVector));
-
-	float D = distributionGGX(NdotH, material.getRoughness());
-	float pdf = D * NdotH / (4.0f * VdotH + 1e-7f);
-
-	return pdf;*/
 	return microfacetPDF(incidentDir, sampledDir, normal, material);
 }
 
@@ -1363,7 +776,6 @@ Color Raytracer::evaluateBRDF(const Material& material,
 		return material.getDiffuseColor() / M_PI;
 	}
 
-
 	if (material.hasDiffuse()){
 		// Diffuse (Lambertian) BRDF
 		brdfValue += material.getDiffuseColor() / M_PI;
@@ -1372,33 +784,10 @@ Color Raytracer::evaluateBRDF(const Material& material,
 	if (material.isGlossy() || material.getIsReflective()) {
 		// ** Specular BRDF using Microfacet Model **
 		Color specular = microfacetBRDF(viewDir, lightDir, normal, material);
-		/*
-		Vector3 halfVector = (viewDir + lightDir).normalize();
-		float NdotH = std::max(0.0f, dotProduct(normal, halfVector));
-		float NdotV = std::max(0.0f, dotProduct(normal, viewDir));
-		float NdotL = std::max(0.0f, dotProduct(normal, lightDir));
-		float VdotH = std::max(0.0f, dotProduct(viewDir, halfVector));
-
-		float roughness = material.getRoughness();
-
-		// Fresnel term
-		float F = fresnelDielectric(VdotH, 1.0f, material.getRefractiveIndex());
-
-		// Geometry term
-		float G = geometrySmith(NdotV, NdotL, roughness);
-
-		// Normal Distribution Function (NDF)
-		float D = distributionGGX(NdotH, roughness);
-
-		// Specular BRDF
-		float denom = 4.0f * NdotV * NdotL + 1e-7f;
-		Color specular = material.getSpecularColor() * (F * G * D / denom);
-		*/
 		brdfValue += specular;
 	}
 
 	// Refractive materials are handled separately
-
 	return brdfValue;
 }
 
@@ -1492,78 +881,59 @@ Color Raytracer::computeDirectLighting(const Vector3& intersectionPoint,
 									   std::default_random_engine& rng) {
 	Color directLight(0.0f, 0.0f, 0.0f);
 
-	// Number of samples for area lights (set to 1 for point lights)
-	int numLightSamples = 1;
 
 	// Loop over all light sources
 	for (const PointLight& light : scene.getPointLights()) {
 		Color lightContribution(0.0f, 0.0f, 0.0f);
 
-		// ** Handle Different Light Types **
-		/*if (light.getType() == LightType::POINT) {
-			// Point Light
-			numLightSamples = 1;
-		} else if (light.getType() == LightType::AREA) {
-			// Area Light
-			numLightSamples = light.getSampleCount();  // Adjust as needed
-		}*/
+		Vector3 lightPosition;
+		Vector3 lightNormal;
+		float pdfLight = 1.0f;
 
-		// ** Multiple Importance Sampling **
-		for (int i = 0; i < numLightSamples; ++i) {
-			Vector3 lightPosition;
-			Vector3 lightNormal;
-			float pdfLight = 1.0f;
+		// Sample a point on the light source
+		light.sampleLight(intersectionPoint, rng, lightPosition,
+						  lightNormal, pdfLight);
 
-			// Sample a point on the light source
-			light.sampleLight(intersectionPoint, rng, lightPosition,
-							  lightNormal, pdfLight);
+		Vector3 lightDir = (lightPosition - intersectionPoint).normalize();
+		float lightDistance = (lightPosition - intersectionPoint).norm();
+		float distanceSquared = lightDistance * lightDistance;
 
-			Vector3 lightDir = (lightPosition - intersectionPoint).normalize();
-			float lightDistance = (lightPosition - intersectionPoint).norm();
-			float distanceSquared = lightDistance * lightDistance;
+		// Check if the point is in shadow
+		if (scene.isInShadow(intersectionPoint, lightDir,
+							 lightDistance, normal)) {
+			continue;  // Light is blocked
+		}
 
-			// Check if the point is in shadow
-			if (scene.isInShadow(intersectionPoint, lightDir,
-								 lightDistance, normal)) {
-				continue;  // Light is blocked
-			}
+		// ** Compute BRDF Value **
+		float NdotL = std::max(0.0f, dotProduct(normal, lightDir));
+		if (NdotL > 0.0f) {
+			Color brdfValue = evaluateBRDF(material, viewDir,
+										   lightDir, normal);
 
-			// ** Compute BRDF Value **
-			float NdotL = std::max(0.0f, dotProduct(normal, lightDir));
-			if (NdotL > 0.0f) {
-				Color brdfValue = evaluateBRDF(material, viewDir,
-											   lightDir, normal);
+			// ** Light Emission and Attenuation **
+			Color lightIntensity = light.getIntensity();
 
-				// ** Light Emission and Attenuation **
-				Color lightIntensity = light.getIntensity(
-						intersectionPoint, lightPosition, lightNormal);
+			// ** Geometry Term for Area Lights **
+			float G = 1.0f;
 
-				// ** Geometry Term for Area Lights **
-				float G = 1.0f;
-				/*if (light.getType() == LightType::AREA) {
-					float NdotL_light = std::max(0.0f,
-				 						dotProduct(lightNormal, -lightDir));
-					G = NdotL_light * NdotL / (distanceSquared + 1e-7f);
-				} else {*/
-					// For point lights, use inverse square law
-					lightIntensity = lightIntensity
-										/ (distanceSquared + 1e-7f);
-				//}
+			// For point lights, use inverse square law
+			lightIntensity = lightIntensity
+								/ (distanceSquared + 1e-7f);
 
-				// ** Accumulate Contribution **
-				lightContribution += brdfValue * lightIntensity *
-									NdotL * G / pdfLight;
-			}
+
+			// ** Accumulate Contribution **
+			lightContribution += brdfValue * lightIntensity *
+								NdotL * G / pdfLight;
 		}
 
 		// Average over the number of samples
-		directLight += lightContribution / static_cast<float>(numLightSamples);
+		directLight += lightContribution;
 	}
 
 	return directLight;
 }
 
-//test
+
 
 // Microfacet BRDF using Cook-Torrance model with GGX distribution
 Color Raytracer::microfacetBRDF(const Vector3& viewDir,
@@ -1594,7 +964,7 @@ Color Raytracer::microfacetBRDF(const Vector3& viewDir,
 
 
 
-Color Raytracer::traceRayBRDFBia(const Ray& ray, int depth,
+Color Raytracer::traceRayBRDF(const Ray& ray, int depth,
 								 std::stack<float>& refractiveStack,
 								 std::default_random_engine& rng) {
 	if (depth > nbounces) {
@@ -1684,13 +1054,13 @@ Color Raytracer::traceRayBRDFBia(const Ray& ray, int depth,
 			if (randomSample < reflectance) {
 				// ** Reflection chosen (with probability R) **
 				// Sample a reflection direction
-				sampleBRDFBia(viewDir, normal, material, rng, refractiveStack,
+				sampleBRDF(viewDir, normal, material, rng,
 							  sampledDir, pdf, brdf);
 
 				if (pdf > 0.0f && !brdf.isZero()) {
 					Ray reflectedRay(intersectionPoint + normal * 1e-4f,
 									 sampledDir);
-					Color incoming = traceRayBRDFBia(reflectedRay, depth + 1,
+					Color incoming = traceRayBRDF(reflectedRay, depth + 1,
 													 refractiveStack, rng);
 
 					// Compute contribution
@@ -1720,7 +1090,7 @@ Color Raytracer::traceRayBRDFBia(const Ray& ray, int depth,
 						refractiveStackCopy.pop();
 					}
 
-					Color incoming = traceRayBRDFBia(refractedRay, depth + 1,
+					Color incoming = traceRayBRDF(refractedRay, depth + 1,
 													 refractiveStackCopy, rng);
 
 					incomingRadiance += incoming * (1.0f - reflectance);
@@ -1731,7 +1101,7 @@ Color Raytracer::traceRayBRDFBia(const Ray& ray, int depth,
 					sampledDir = reflect(incidentDir, normal).normalize();
 					Ray reflectedRay(intersectionPoint + normal * 1e-4f,
 									 sampledDir);
-					Color incoming = traceRayBRDFBia(reflectedRay, depth + 1,
+					Color incoming = traceRayBRDF(reflectedRay, depth + 1,
 													 refractiveStack, rng);
 
 					incomingRadiance += incoming; //reflectance = 1
@@ -1740,7 +1110,7 @@ Color Raytracer::traceRayBRDFBia(const Ray& ray, int depth,
 		} else {
 			// ** Glossy or Diffuse Material Sampling **
 			// Sample a direction based on the BRDF
-			sampleBRDFBia(viewDir, normal, material, rng, refractiveStack,
+			sampleBRDF(viewDir, normal, material, rng,
 						  sampledDir, pdf, brdf);
 
 			if (pdf > 0.0f && !brdf.isZero()) {
@@ -1750,7 +1120,7 @@ Color Raytracer::traceRayBRDFBia(const Ray& ray, int depth,
 
 				// Recursive trace
 				std::stack<float> refractiveStackCopy = refractiveStack;
-				Color incoming = traceRayBRDFBia(sampleRay, depth + 1,
+				Color incoming = traceRayBRDF(sampleRay, depth + 1,
 												 refractiveStackCopy, rng);
 
 				// Compute contribution
@@ -1774,11 +1144,10 @@ Color Raytracer::traceRayBRDFBia(const Ray& ray, int depth,
 }
 
 
-void Raytracer::sampleBRDFBia(const Vector3& viewDir,
+void Raytracer::sampleBRDF(const Vector3& viewDir,
 							  const Vector3& normal,
 							  const Material& material,
 							  std::default_random_engine& rng,
-							  std::stack<float>& refractiveStack,
 							  Vector3& sampledDir, float& pdf,
 							  Color& brdfValue) {
 	if (material.isDiffuse()) {

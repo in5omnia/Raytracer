@@ -26,9 +26,4 @@ void PointLight::sampleLight(const Vector3& referencePoint,
 	pdf = 1.0f;  // Since it's a single point
 }
 
-Color PointLight::getIntensity(const Vector3& intersectionPoint,
-							   const Vector3& lightPosition,
-							   const Vector3& lightNormal) const {
-	return intensity;
-}
 

@@ -1,6 +1,3 @@
-//
-// Created by Beatriz Gavilan on 16/11/2024.
-//
 
 #ifndef RAYTRACER_COLOR_H
 #define RAYTRACER_COLOR_H

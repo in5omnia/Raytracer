@@ -56,35 +56,7 @@ class Raytracer {
 							const Vector3& reflected,
 							const Vector3& normal,
 							const Material& material);
-/*
-		Color traceRayBRDF(const Ray& ray, int depth,
-						std::stack<float>& refractiveStack,
-						std::default_random_engine& rng);
-		float fresnelDielectric(float cosThetaI, float etaI, float etaT) const;
-		Vector3 cosineSampleHemisphere(const Vector3& normal,
-							std::default_random_engine& rng);
-		float distributionGGX(float NdotH, float roughness) const;
-		float geometrySmith(float NdotV, float NdotL, float roughness) const;
-		float geometrySchlickGGX(float NdotV, float roughness) const;
-		Color evaluateBRDF(Material material, const Vector3& viewDir,
-						const Vector3& lightDir, const Vector3& normal) const;
 
-
-		void sampleBRDF(const Vector3& viewDir,
-						const Vector3& normal,
-						const Material& material,
-					   	std::default_random_engine& rng,
-					   	Vector3& sampledDir, float& pdf,
-					   	Color& brdfValue);
-
-		Vector3 sampleGGXDistribution(const Vector3& viewDir,
-						const Vector3& normal, float roughness,
-						std::default_random_engine& rng);
-
-		float computeSpecularPDF(const Vector3& viewDir,
-						const Vector3& sampledDir,
-						const Vector3& normal, float roughness);
-*/
 		//refraction and reflection methods
 		bool refract(const Vector3& I, const Vector3& N,
 					 float eta, Vector3& T);
@@ -94,30 +66,17 @@ class Raytracer {
 		Image readJSON(const std::string& filename);
 
 		//new
-		Color traceRayBRDFBia(const Ray& ray, int depth,
+		Color traceRayBRDF(const Ray& ray, int depth,
 							  std::stack<float>& refractiveStack,
 							  std::default_random_engine& rng);
 
-		void sampleBRDFBia(const Vector3& viewDir,
+		void sampleBRDF(const Vector3& viewDir,
 						   const Vector3& normal,
 						   const Material& material,
 						   std::default_random_engine& rng,
-						   std::stack<float>& refractiveStack,
 						   Vector3& sampledDir, float& pdf,
 						   Color& brdfValue);
 
-
-		Color traceRayBRDF(const Ray& ray, int depth,
-						   std::stack<float>& refractiveStack,
-						   std::default_random_engine& rng);
-
-		void sampleBRDF(const Vector3& viewDir,
-						const Vector3& normal,
-						const Material& material,
-						std::default_random_engine& rng,
-						std::stack<float>& refractiveStack,
-						Vector3& sampledDir, float& pdf,
-						Color& brdfValue);
 
 		Vector3 sampleGGXDirection(const Vector3& viewDir,
 								   const Vector3& normal,
